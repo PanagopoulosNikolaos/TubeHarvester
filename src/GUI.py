@@ -548,7 +548,7 @@ class YouTubeDownloaderGUI:
 
         # Single download tab
         self.single_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.single_tab, text="📹 Single Download")
+        self.notebook.add(self.single_tab, text="Single Download")
 
         # Single download panel
         self.single_panel = SingleDownloadPanel(self.single_tab)
@@ -556,7 +556,7 @@ class YouTubeDownloaderGUI:
 
         # Batch download tab
         self.batch_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.batch_tab, text="📂 Batch Download")
+        self.notebook.add(self.batch_tab, text="Batch Download")
 
         # Batch download panel
         self.batch_panel = BatchDownloadPanel(self.batch_tab)
