@@ -419,7 +419,7 @@ class BatchDownloadPanel(ttk.Frame):
 class YouTubeDownloaderGUI:
     def __init__(self, master):
         self.master = master
-        self.master.title('ChannelVacuum - YouTube Downloader')
+        self.master.title('TubeHarvester - YouTube Downloader')
         self.master.geometry("750x650")
         self.master.resizable(True, True)
         

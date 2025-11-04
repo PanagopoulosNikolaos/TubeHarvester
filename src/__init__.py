@@ -1,5 +1,5 @@
 """
-ChannelVacuum - YouTube Downloader Package
+TubeHarvester - YouTube Downloader Package
 
 This package provides functionality for downloading YouTube videos and playlists
 in various formats (MP3, MP4) with both GUI and programmatic interfaces.
