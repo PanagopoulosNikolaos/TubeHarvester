@@ -101,12 +101,12 @@ class BatchDownloader:
                         if success:
                             results['successful'] += 1
                             if self.log_callback:
-                                self.log_callback(f"✓ Completed: {video_info['title']}")
+                                self.log_callback(f"Completed: {video_info['title']}")
                         else:
                             results['failed'] += 1
                             results['errors'].append(f"{video_info['title']}: {error_msg}")
                             if self.log_callback:
-                                self.log_callback(f"✗ Failed: {video_info['title']} - {error_msg}")
+                                self.log_callback(f"Failed: {video_info['title']} - {error_msg}")
 
                         # Update overall progress
                         overall_progress = (self.completed_videos / self.total_videos) * 100
@@ -119,7 +119,7 @@ class BatchDownloader:
                         results['failed'] += 1
                         results['errors'].append(f"{video_info['title']}: {str(e)}")
                         if self.log_callback:
-                            self.log_callback(f"✗ Error: {video_info['title']} - {str(e)}")
+                            self.log_callback(f"Error: {video_info['title']} - {str(e)}")
 
         if self.cancel_event.is_set():
             if self.log_callback:

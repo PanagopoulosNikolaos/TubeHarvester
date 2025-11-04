@@ -28,10 +28,10 @@ def run_tests():
         result = subprocess.run(cmd, shell=True, cwd=os.getcwd())
         if result.returncode == 0:
             print("\n" + "=" * 50)
-            print("✅ All tests passed!")
+            print("All tests passed!")
         else:
             print("\n" + "=" * 50)
-            print("❌ Some tests failed. Check the output above for details.")
+            print("Some tests failed. Check the output above for details.")
         return result.returncode
     except KeyboardInterrupt:
         print("\nTest run interrupted by user.")
