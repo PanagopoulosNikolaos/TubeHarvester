@@ -6,16 +6,16 @@ from src.Mp3_Converter import MP3Downloader
 
 
 class TestMP3Downloader:
-    """Test cases for MP3Downloader class."""
+    """Test MP3Downloader functionality."""
 
     def setup_method(self):
-        """Set up test fixtures before each test method."""
+        """Initialize test URL, path and downloader instance."""
         self.test_url = "https://www.youtube.com/watch?v=test123"
         self.test_path = tempfile.mkdtemp()
         self.downloader = MP3Downloader(self.test_url, self.test_path)
 
     def teardown_method(self):
-        """Clean up test fixtures after each test method."""
+        """Clean up test directory."""
         # Clean up any files created during tests
         for file in os.listdir(self.test_path):
             file_path = os.path.join(self.test_path, file)

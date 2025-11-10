@@ -4,10 +4,10 @@ from src.ChannelScraper import ChannelScraper
 
 
 class TestChannelScraper:
-    """Test cases for ChannelScraper class."""
+    """Test ChannelScraper functionality."""
 
     def setup_method(self):
-        """Set up test fixtures before each test method."""
+        """Initialize test URL and scraper instance."""
         self.test_url = "https://www.youtube.com/channel/test123"
         self.scraper = ChannelScraper()
 

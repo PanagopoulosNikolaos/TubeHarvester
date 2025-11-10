@@ -108,7 +108,9 @@ class MP3Downloader:
                 }],
                 'outtmpl': os.path.join(self.save_path, f'{title}.%(ext)s'),
                 'progress_hooks': [self.progress_hook],
-                'keepvideo': True,
+                'keepvideo': False, # changed to False to remove the original video file after conversion
+                'quiet': True, # to suppress yt-dlp output
+                'no_warnings': True # to suppress yt-dlp warnings
             }
 
             with yt_dlp.YoutubeDL(options) as ydl:
@@ -118,7 +120,18 @@ class MP3Downloader:
                 self.log_callback(f"Download complete at {self.save_path}")
 
             return self.save_path
+        except yt_dlp.DownloadError as e:
+            if "Private video" in str(e) or "This video is unavailable" in str(e) or "Copyright" in str(e) or "Sign in to confirm your age" in str(e):
+                if self.log_callback:
+                    self.log_callback(f"Cannot download private or restricted video: {title or 'Unknown Title'}")
+                logging.info(f"Private or restricted video skipped: {self.url}")
+            else:
+                logging.error(f"An error occurred: {e}")
+                if self.log_callback:
+                    self.log_callback(f"An error occurred: {e}")
+            raise
         except Exception as e:
+            logging.error(f"An error occurred: {e}")
             if self.log_callback:
                 self.log_callback(f"An error occurred: {e}")
             raise

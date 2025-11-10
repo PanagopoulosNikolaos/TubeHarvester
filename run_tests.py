@@ -20,9 +20,8 @@ def run_tests():
         print("Error: Please run this script from the project root directory")
         sys.exit(1)
 
-    # Use the python from the conda environment directly
-    conda_python = "/home/ice/miniconda3/envs/base_Cuda/bin/python"
-    cmd = f"{conda_python} -m pytest tests/ -v --tb=short"
+    # Use the current python interpreter
+    cmd = "python -m pytest tests/ -v --tb=short"
 
     try:
         result = subprocess.run(cmd, shell=True, cwd=os.getcwd())

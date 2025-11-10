@@ -4,10 +4,10 @@ from src.PlaylistScraper import PlaylistScraper
 
 
 class TestPlaylistScraper:
-    """Test cases for PlaylistScraper class."""
+    """Test PlaylistScraper functionality."""
 
     def setup_method(self):
-        """Set up test fixtures before each test method."""
+        """Initialize test URL and scraper instance."""
         self.test_url = "https://www.youtube.com/playlist?list=test123"
         self.scraper = PlaylistScraper()
 

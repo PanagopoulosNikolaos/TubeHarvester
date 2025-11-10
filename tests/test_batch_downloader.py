@@ -6,15 +6,15 @@ from src.BatchDownloader import BatchDownloader
 
 
 class TestBatchDownloader:
-    """Test cases for BatchDownloader class."""
+    """Test BatchDownloader functionality."""
 
     def setup_method(self):
-        """Set up test fixtures before each test method."""
+        """Create temporary directory and downloader instance."""
         self.test_base_path = tempfile.mkdtemp()
         self.downloader = BatchDownloader(max_workers=2)
 
     def teardown_method(self):
-        """Clean up test fixtures after each test method."""
+        """Clean up temporary directory."""
         # Clean up any files created during tests
         if os.path.exists(self.test_base_path):
             for file in os.listdir(self.test_base_path):

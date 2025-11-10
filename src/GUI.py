@@ -16,18 +16,20 @@ class SingleDownloadPanel(ttk.Frame):
         self.build_gui()
 
     def build_gui(self):
-        # Main frame
+        # Main frame for the single download panel
         main_frame = ttk.Frame(self.master, padding="10 10 10 10")
         main_frame.pack(expand=True, fill=tk.BOTH)
 
-        # URL and Path Frame
+        # URL and Path Frame - contains input fields for URL and download path
         url_path_frame = ttk.LabelFrame(main_frame, text="Input", padding="10 10 10 10")
         url_path_frame.pack(fill=tk.X, pady=5)
         
+        # URL input field configuration
         ttk.Label(url_path_frame, text="YouTube URL:").grid(row=0, column=0, sticky="w", pady=2)
         self.url_entry = ttk.Entry(url_path_frame, width=60)
         self.url_entry.grid(row=0, column=1, columnspan=2, sticky="ew", pady=2)
 
+        # Download path input field with browse button
         ttk.Label(url_path_frame, text="Download Path:").grid(row=1, column=0, sticky="w", pady=2)
         self.path_display = ttk.Entry(url_path_frame, width=50)
         self.path_display.grid(row=1, column=1, sticky="ew", pady=2)
@@ -36,10 +38,11 @@ class SingleDownloadPanel(ttk.Frame):
         
         url_path_frame.columnconfigure(1, weight=1)
 
-        # Options Frame
+        # Options Frame - contains format and resolution selection
         options_frame = ttk.LabelFrame(main_frame, text="Options", padding="10 10 10 10")
         options_frame.pack(fill=tk.X, pady=5)
 
+        # Format selection radio buttons (MP4/MP3)
         ttk.Label(options_frame, text="Format:").grid(row=0, column=0, sticky="w")
         self.format_var = tk.StringVar(value="MP4")
         self.mp4_radio = ttk.Radiobutton(options_frame, text="MP4", variable=self.format_var, value="MP4", command=self.update_format_color)
@@ -47,30 +50,58 @@ class SingleDownloadPanel(ttk.Frame):
         self.mp3_radio = ttk.Radiobutton(options_frame, text="MP3", variable=self.format_var, value="MP3", command=self.update_format_color)
         self.mp3_radio.grid(row=0, column=2, sticky='w', padx=5)
 
+        # Resolution selection dropdown menu
         ttk.Label(options_frame, text="Resolution:").grid(row=1, column=0, sticky="w")
         self.resolution_var = tk.StringVar(self.master)
         self.resolution_menu = ttk.OptionMenu(options_frame, self.resolution_var, "Highest")
         self.resolution_menu.grid(row=1, column=1, columnspan=2, sticky="w", pady=5)
 
-        # Controls Frame
+        # Controls Frame - contains the main action button
         controls_frame = ttk.Frame(main_frame)
         controls_frame.pack(fill=tk.X, pady=5)
         controls_frame.columnconfigure(0, weight=1)
         controls_frame.columnconfigure(1, weight=1)
 
+        # Download button configuration
         self.download_button = ttk.Button(controls_frame, text="Download", command=self.start_download)
         self.download_button.grid(row=0, column=0, sticky="ew", padx=(0, 5))
         
-        self.close_button = ttk.Button(controls_frame, text="Close", command=self.master.destroy)
-        self.close_button.grid(row=0, column=1, sticky="ew", padx=(5, 0))
+        # Removed close button as it's redundant with the window's X button
 
-        # Progress and Log Frame
+        # Progress and Log Frame - contains progress bars and status messages
         progress_log_frame = ttk.LabelFrame(main_frame, text="Status", padding="10 10 10 10")
         progress_log_frame.pack(expand=True, fill=tk.BOTH, pady=5)
 
-        self.progress = ttk.Progressbar(progress_log_frame, orient='horizontal', length=400, mode='determinate')
-        self.progress.pack(fill=tk.X, pady=5)
+        # Fetching Data Progress Bar - shows progress when fetching video data
+        self.fetch_progress_frame = ttk.Frame(progress_log_frame)
+        self.fetch_progress_frame.pack(fill=tk.X, pady=5)
+        
+        self.fetch_label = ttk.Label(self.fetch_progress_frame, text="Fetching Data:", font=('Courier', 9, 'bold'))
+        self.fetch_label.pack(anchor='w')
+        
+        self.fetch_progress = ttk.Progressbar(self.fetch_progress_frame, orient='horizontal', length=400, mode='determinate')
+        self.fetch_progress.pack(fill=tk.X, pady=2)
+        
+        self.fetch_status_label = ttk.Label(self.fetch_progress_frame, text="", font=('Courier', 9))
+        self.fetch_status_label.pack(anchor='w')
+        
+        # Hide fetch progress initially
+        self.fetch_progress_frame.pack_forget()
 
+        # Download Progress Bar - shows progress during the actual download
+        self.download_progress_frame = ttk.Frame(progress_log_frame)
+        self.download_progress_frame.pack(fill=tk.X, pady=5)
+        
+        self.download_label = ttk.Label(self.download_progress_frame, text="Download Progress:", font=('Courier', 9, 'bold'))
+        self.download_label.pack(anchor='w')
+        
+        self.progress = ttk.Progressbar(self.download_progress_frame, orient='horizontal', length=400, mode='determinate')
+        self.progress.pack(fill=tk.X, pady=2)
+        
+        # Hide download progress initially
+        self.download_progress_frame.pack_forget()
+
+        # Message log display area - shows status messages and errors
         self.message_screen = Text(progress_log_frame, height=10, width=75, font=('Courier', 9), 
                                    fg='#c9d1d9', bg='#161b22', insertbackground='#ffd700',
                                    borderwidth=0, highlightthickness=1, highlightbackground='#ffd700',
@@ -171,6 +202,7 @@ class BatchDownloadPanel(ttk.Frame):
         super().__init__(parent)
         self.master = parent
         self.build_gui()
+        self._display_startup_info()
 
     def build_gui(self):
         # Main frame
@@ -240,8 +272,34 @@ class BatchDownloadPanel(ttk.Frame):
         progress_log_frame = ttk.LabelFrame(main_frame, text="Status", padding="10 10 10 10")
         progress_log_frame.pack(expand=True, fill=tk.BOTH, pady=5)
 
-        self.progress = ttk.Progressbar(progress_log_frame, orient='horizontal', length=400, mode='determinate')
-        self.progress.pack(fill=tk.X, pady=5)
+        # Fetching Data Progress Bar
+        self.fetch_progress_frame = ttk.Frame(progress_log_frame)
+        self.fetch_progress_frame.pack(fill=tk.X, pady=5)
+        
+        self.fetch_label = ttk.Label(self.fetch_progress_frame, text="Fetching Data:", font=('Courier', 9, 'bold'))
+        self.fetch_label.pack(anchor='w')
+        
+        self.fetch_progress = ttk.Progressbar(self.fetch_progress_frame, orient='horizontal', length=400, mode='determinate')
+        self.fetch_progress.pack(fill=tk.X, pady=2)
+        
+        self.fetch_status_label = ttk.Label(self.fetch_progress_frame, text="", font=('Courier', 9))
+        self.fetch_status_label.pack(anchor='w')
+        
+        # Hide fetch progress initially
+        self.fetch_progress_frame.pack_forget()
+
+        # Download Progress Bar
+        self.download_progress_frame = ttk.Frame(progress_log_frame)
+        self.download_progress_frame.pack(fill=tk.X, pady=5)
+        
+        self.download_label = ttk.Label(self.download_progress_frame, text="Download Progress:", font=('Courier', 9, 'bold'))
+        self.download_label.pack(anchor='w')
+        
+        self.progress = ttk.Progressbar(self.download_progress_frame, orient='horizontal', length=400, mode='determinate')
+        self.progress.pack(fill=tk.X, pady=2)
+        
+        # Hide download progress initially
+        self.download_progress_frame.pack_forget()
 
         self.message_screen = Text(progress_log_frame, height=10, width=75, font=('Courier', 9), 
                                    fg='#c9d1d9', bg='#161b22', insertbackground='#ffd700',
@@ -316,12 +374,22 @@ class BatchDownloadPanel(ttk.Frame):
         try:
             self.batch_downloader = None
 
+            # Show fetch progress bar
+            self.fetch_progress_frame.pack(fill=tk.X, pady=5)
+            self.fetch_progress['value'] = 0
+            self.fetch_status_label.config(text="")
+
             if mode == "Playlist Download":
                 # Scrape playlist
                 self.log_message(f"Scraping playlist: {url}")
                 from .PlaylistScraper import PlaylistScraper
                 scraper = PlaylistScraper(timeout=2.0)
-                videos = scraper.scrape_playlist(url, max_videos)
+                
+                # Create progress callback for fetching
+                def fetch_progress_callback(current, total, percentage):
+                    self._update_fetch_progress(current, total, percentage)
+                
+                videos = scraper.scrape_playlist(url, max_videos, fetch_progress_callback)
 
                 if not videos:
                     self.log_message("No videos found in playlist")
@@ -344,8 +412,13 @@ class BatchDownloadPanel(ttk.Frame):
                 self.log_message(f"Scraping channel: {url} (unlimited videos)")
                 from .ChannelScraper import ChannelScraper
                 scraper = ChannelScraper(timeout=2.0)
+                
+                # Create progress callback for fetching
+                def fetch_progress_callback(current, total, percentage):
+                    self._update_fetch_progress(current, total, percentage)
+                
                 # Use a very high limit for profile scraping to get all videos
-                channel_info = scraper.scrape_channel(url, 10000)  # 10k should be enough for most channels
+                channel_info = scraper.scrape_channel(url, 10000, fetch_progress_callback)  # 10k should be enough for most channels
 
                 if not channel_info['playlists'] and not channel_info['standalone_videos']:
                     self.log_message("No content found in channel")
@@ -374,6 +447,11 @@ class BatchDownloadPanel(ttk.Frame):
                         'folder': f"{channel_name}/Random"
                     })
 
+            # Hide fetch progress bar and show download progress bar
+            self.fetch_progress_frame.pack_forget()
+            self.download_progress_frame.pack(fill=tk.X, pady=5)
+            self.log_message("Data fetching complete. Starting downloads...")
+
             # Start batch download
             self.batch_downloader = BatchDownloader(
                 max_workers=3,
@@ -400,13 +478,35 @@ class BatchDownloadPanel(ttk.Frame):
             self.log_message(f"Traceback: {traceback.format_exc()}")
 
         finally:
+            # Hide both progress bars
+            self.fetch_progress_frame.pack_forget()
+            self.download_progress_frame.pack_forget()
+            
             # Re-enable buttons
             self.download_button.config(state=tk.NORMAL)
             self.cancel_button.config(state=tk.DISABLED)
             self.batch_downloader = None
 
+    def _update_fetch_progress(self, current, total, percentage):
+        """Update the fetch progress bar with ASCII-style visual."""
+        # Update progress bar
+        self.fetch_progress['value'] = percentage
+        
+        # Create ASCII-style progress bar
+        bar_width = 20
+        filled = int((percentage / 100) * bar_width)
+        bar = '=' * filled + '>' + ' ' * (bar_width - filled - 1)
+        
+        # Update status label with ASCII bar and stats
+        status_text = f"[{bar}] {percentage}% ({current}/{total} items)"
+        self.fetch_status_label.config(text=status_text)
+        
+        # Force GUI update
+        self.fetch_progress.update()
+        self.fetch_status_label.update()
+
     def _update_progress(self, percentage):
-        """Update the progress bar."""
+        """Update the download progress bar."""
         self.progress['value'] = percentage
         self.progress.update()
 
@@ -415,6 +515,37 @@ class BatchDownloadPanel(ttk.Frame):
         self.message_screen.insert(tk.END, message + "\n")
         self.message_screen.see(tk.END)
         self.message_screen.config(state=tk.DISABLED)
+
+    def _display_startup_info(self):
+        """Display startup configuration information."""
+        import platform
+        home_dir = os.path.expanduser('~')
+        
+        info_lines = [
+            "=" * 60,
+            "TubeHarvester - Batch Download Configuration",
+            "=" * 60,
+            f"System: {platform.system()} {platform.release()}",
+            f"Home Directory: {home_dir}",
+            f"Default Base Path: {home_dir}",
+            "",
+            "Default Settings:",
+            f"  Format: {self.format_var.get()}",
+            f"  Quality: {self.quality_var.get()}",
+            f"  Max Videos: {self.max_videos_var.get()}",
+            f"  Mode: {self.mode_var.get()}",
+            "",
+            "Output Structure:",
+            "  MP3: ~/Music/<Source>/<Playlist or Random>/",
+            "  MP4: ~/Videos/<Source>/<Playlist or Random>/",
+            "",
+            "Ready to download. Enter a playlist or channel URL to begin.",
+            "=" * 60,
+            ""
+        ]
+        
+        for line in info_lines:
+            self.log_message(line)
 
 class YouTubeDownloaderGUI:
     def __init__(self, master):

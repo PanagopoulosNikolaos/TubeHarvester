@@ -17,7 +17,7 @@ class ChannelScraper:
         """
         self.timeout = timeout
 
-    def scrape_channel(self, url, max_videos_per_playlist=200):
+    def scrape_channel(self, url, max_videos_per_playlist=200, progress_callback=None):
         """
         Scrape all playlists and standalone videos from a YouTube channel.
 
@@ -27,6 +27,8 @@ class ChannelScraper:
             YouTube channel URL
         max_videos_per_playlist : int
             Maximum number of videos to scrape per playlist (default: 200)
+        progress_callback : callable, optional
+            Function to call with progress updates (current, total, percentage)
 
         Returns
         -------
@@ -51,14 +53,31 @@ class ChannelScraper:
             # Get channel name
             channel_info['channel_name'] = self._get_channel_name(channel_url)
 
+            # Report initial progress
+            if progress_callback:
+                progress_callback(0, 100, 0)
+
             # Get all playlists from the channel
             playlists = self._get_channel_playlists(channel_url)
+
+            # Calculate progress steps
+            total_playlists = len(playlists) + 1  # +1 for standalone videos
+            completed = 0
 
             # Scrape videos from each playlist
             for playlist in playlists:
                 try:
                     scraper = PlaylistScraper(timeout=self.timeout)
-                    videos = scraper.scrape_playlist(playlist['url'], max_videos_per_playlist)
+                    
+                    # Create a nested progress callback for playlist scraping
+                    def nested_progress(current, total, percentage):
+                        if progress_callback:
+                            # Calculate overall progress including this playlist's progress
+                            playlist_weight = (1 / total_playlists)
+                            overall_percentage = int(((completed + (percentage / 100)) / total_playlists) * 100)
+                            progress_callback(completed + 1, total_playlists, overall_percentage)
+                    
+                    videos = scraper.scrape_playlist(playlist['url'], max_videos_per_playlist, nested_progress)
 
                     playlist_info = {
                         'title': playlist['title'],
@@ -67,15 +86,25 @@ class ChannelScraper:
                     }
                     channel_info['playlists'].append(playlist_info)
 
+                    completed += 1
+                    if progress_callback:
+                        percentage = int((completed / total_playlists) * 100)
+                        progress_callback(completed, total_playlists, percentage)
+
                     # Rate limiting between playlists
                     time.sleep(self.timeout)
 
                 except Exception as e:
                     logging.warning(f"Failed to scrape playlist {playlist['title']}: {e}")
+                    completed += 1
                     continue
 
             # Get standalone videos (videos not in playlists)
             channel_info['standalone_videos'] = self._get_standalone_videos(channel_url, max_videos_per_playlist)
+            
+            completed += 1
+            if progress_callback:
+                progress_callback(completed, total_playlists, 100)
 
         except Exception as e:
             logging.error(f"Error scraping channel: {e}")
@@ -221,12 +250,25 @@ class ChannelScraper:
                 if 'entries' in info:
                     for entry in info['entries'][:max_videos]:
                         if entry:
-                            video_info = {
-                                'url': f"https://www.youtube.com/watch?v={entry['id']}",
-                                'title': entry.get('title', 'Unknown Title'),
-                                'duration': entry.get('duration', 0)
-                            }
-                            videos.append(video_info)
+                            # Create video URL from entry ID if available
+                            video_id = entry.get('id')
+                            if video_id:
+                                video_url = f"https://www.youtube.com/watch?v={video_id}"
+                            else:
+                                # If no ID, try to use the URL directly if available
+                                video_url = entry.get('url', '')
+                            
+                            # Add video to the list if it has a valid URL and title
+                            if video_url and entry.get('title'):
+                                video_data = {
+                                    'url': video_url,
+                                    'title': entry.get('title', 'Unknown Title'),
+                                    'duration': entry.get('duration', 0)
+                                }
+                                videos.append(video_data)
+                            else:
+                                # If the entry doesn't have a proper format, skip it
+                                continue
 
         except Exception as e:
             logging.warning(f"Could not extract standalone videos from channel: {e}")

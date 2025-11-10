@@ -99,6 +99,15 @@ class YouTubeDownloader:
             if self.log_callback:
                 self.log_callback(f"Download complete at {self.path}")
 
+        except yt_dlp.DownloadError as e:
+            if "Private video" in str(e) or "This video is unavailable" in str(e) or "Copyright" in str(e) or "Sign in to confirm your age" in str(e):
+                if self.log_callback:
+                    self.log_callback(f"Cannot download private or restricted video: {self.video_title or 'Unknown Title'}")
+                logging.info(f"Private or restricted video skipped: {self.url}")
+            else:
+                logging.error(f"An error occurred: {e}")
+                if self.log_callback:
+                    self.log_callback(f"An error occurred: {e}")
         except Exception as e:
             logging.error(f"An error occurred: {e}")
             if self.log_callback:

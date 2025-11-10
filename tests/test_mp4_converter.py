@@ -6,16 +6,16 @@ from src.Mp4_Converter import YouTubeDownloader
 
 
 class TestYouTubeDownloader:
-    """Test cases for YouTubeDownloader class."""
+    """Test YouTubeDownloader functionality."""
 
     def setup_method(self):
-        """Set up test fixtures before each test method."""
+        """Initialize test URL, path and downloader instance."""
         self.test_url = "https://www.youtube.com/watch?v=test123"
         self.test_path = tempfile.mkdtemp()
         self.downloader = YouTubeDownloader()
 
     def teardown_method(self):
-        """Clean up test fixtures after each test method."""
+        """Clean up temporary directory."""
         # Clean up any files created during tests
         if os.path.exists(self.test_path):
             for file in os.listdir(self.test_path):

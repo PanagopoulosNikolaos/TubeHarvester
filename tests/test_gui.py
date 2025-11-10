@@ -7,16 +7,16 @@ from src.GUI import SingleDownloadPanel, BatchDownloadPanel, YouTubeDownloaderGU
 
 
 class TestSingleDownloadPanel:
-    """Test cases for SingleDownloadPanel class."""
+    """Test SingleDownloadPanel functionality."""
 
     def setup_method(self):
-        """Set up test fixtures before each test method."""
+        """Initialize Tk root and panel instance."""
         self.root = tk.Tk()
         self.root.withdraw()  # Hide the root window for testing
         self.panel = SingleDownloadPanel(self.root)
 
     def teardown_method(self):
-        """Clean up test fixtures after each test method."""
+        """Destroy Tk root window."""
         if self.root:
             self.root.destroy()
 
@@ -156,16 +156,16 @@ class TestSingleDownloadPanel:
 
 
 class TestBatchDownloadPanel:
-    """Test cases for BatchDownloadPanel class."""
+    """Test BatchDownloadPanel functionality."""
 
     def setup_method(self):
-        """Set up test fixtures before each test method."""
+        """Initialize Tk root and panel instance."""
         self.root = tk.Tk()
         self.root.withdraw()  # Hide the root window for testing
         self.panel = BatchDownloadPanel(self.root)
 
     def teardown_method(self):
-        """Clean up test fixtures after each test method."""
+        """Destroy Tk root window."""
         if self.root:
             self.root.destroy()
 
@@ -313,15 +313,15 @@ class TestBatchDownloadPanel:
 
 
 class TestYouTubeDownloaderGUI:
-    """Test cases for YouTubeDownloaderGUI class."""
+    """Test YouTubeDownloaderGUI functionality."""
 
     def setup_method(self):
-        """Set up test fixtures before each test method."""
+        """Initialize Tk root instance."""
         self.root = tk.Tk()
         self.root.withdraw()  # Hide the root window for testing
 
     def teardown_method(self):
-        """Clean up test fixtures after each test method."""
+        """Destroy Tk root window."""
         if self.root:
             self.root.destroy()
 

@@ -28,6 +28,7 @@ class BatchDownloader:
         self.total_videos = 0
         self.completed_videos = 0
         self.lock = threading.Lock()
+        self.last_progress_update = 0  # Track the last progress percentage to avoid spam
 
     def download_batch(self, video_list, format_type, base_path, quality="highest"):
         """
@@ -100,8 +101,6 @@ class BatchDownloader:
                         self.completed_videos += 1
                         if success:
                             results['successful'] += 1
-                            if self.log_callback:
-                                self.log_callback(f"Completed: {video_info['title']}")
                         else:
                             results['failed'] += 1
                             results['errors'].append(f"{video_info['title']}: {error_msg}")
@@ -113,6 +112,17 @@ class BatchDownloader:
                         if self.progress_callback:
                             self.progress_callback(int(overall_progress))
 
+                        # Only log progress updates at certain intervals to avoid spam
+                        progress_percent = int(overall_progress)
+                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):  # Update every 5% or at completion
+                            self.last_progress_update = progress_percent
+                            if self.log_callback:
+                                # Create a visual progress bar
+                                bar_length = 20
+                                filled_length = int(bar_length * self.completed_videos // self.total_videos)
+                                bar = '[' + '=' * filled_length + '>' + ' ' * (bar_length - filled_length - 1) + ']'
+                                self.log_callback(f"Download progress: {bar} {progress_percent}% ({self.completed_videos}/{self.total_videos} videos)")
+
                 except Exception as e:
                     with self.lock:
                         self.completed_videos += 1
@@ -120,6 +130,22 @@ class BatchDownloader:
                         results['errors'].append(f"{video_info['title']}: {str(e)}")
                         if self.log_callback:
                             self.log_callback(f"Error: {video_info['title']} - {str(e)}")
+
+                        # Update overall progress even for errors
+                        overall_progress = (self.completed_videos / self.total_videos) * 100
+                        if self.progress_callback:
+                            self.progress_callback(int(overall_progress))
+
+                        # Only log progress updates at certain intervals to avoid spam
+                        progress_percent = int(overall_progress)
+                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):  # Update every 5% or at completion
+                            self.last_progress_update = progress_percent
+                            if self.log_callback:
+                                # Create a visual progress bar
+                                bar_length = 20
+                                filled_length = int(bar_length * self.completed_videos // self.total_videos)
+                                bar = '[' + '=' * filled_length + '>' + ' ' * (bar_length - filled_length - 1) + ']'
+                                self.log_callback(f"Download progress: {bar} {progress_percent}% ({self.completed_videos}/{self.total_videos} videos)")
 
         if self.cancel_event.is_set():
             if self.log_callback:
@@ -175,7 +201,6 @@ class BatchDownloader:
 
             elif format_type.upper() == 'MP3':
                 downloader = MP3Downloader()
-
                 downloader.set_url(video_info['url'])
                 downloader.set_path(folder_path)
                 downloader.download_as_mp3()
