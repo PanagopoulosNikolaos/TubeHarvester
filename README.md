@@ -15,28 +15,30 @@ A Python application for downloading YouTube videos, audio, playlists, and chann
 
 ```
 TubeHarvester/
-├── main.py                 # Main application entry point
-├── requirements.txt        # Python dependencies
-├── README.md              # Project documentation
-├── LICENSE                # License information
-├── run_tests.py           # Test runner
-├── .gitignore             # Git ignore rules
-├── src/                   # Source code directory
-│   ├── __init__.py        # Package initialization
-│   ├── BatchDownloader.py # Batch download functionality
-│   ├── ChannelScraper.py  # YouTube channel scraping
-│   ├── GUI.py            # Graphical user interface
-│   ├── Mp3_Converter.py  # MP3 conversion functionality
-│   ├── Mp4_Converter.py  # MP4 conversion functionality
-│   └── PlaylistScraper.py # YouTube playlist scraping
-└── tests/                 # Test files directory
-    ├── __init__.py        # Package initialization
+├── LICENSE
+├── main.py
+├── README.md
+├── requirements.txt
+├── run_tests.py
+├── src
+│   ├── BatchDownloader.py
+│   ├── ChannelScraper.py
+│   ├── GUI.py
+│   ├── __init__.py
+│   ├── Mp3_Converter.py
+│   ├── Mp4_Converter.py
+│   ├── PlaylistScraper.py
+└── tests
+    ├── __init__.py
     ├── test_batch_downloader.py
+    ├── test_batch_mp3_downloading.py
     ├── test_channel_scraper.py
     ├── test_gui.py
     ├── test_mp3_converter.py
     ├── test_mp4_converter.py
-    └── test_playlist_scraper.py
+    ├── test_playlist_scraper.py
+    ├── test_playlist_url_handling.py
+    └── test_youtube_mix_playlists.py
 ```
 
 ## Installation
