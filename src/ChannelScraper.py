@@ -4,9 +4,10 @@ import logging
 import re
 from urllib.parse import urlparse, parse_qs
 from .PlaylistScraper import PlaylistScraper
+from .CookieManager import CookieManager
 
 class ChannelScraper:
-    def __init__(self, timeout=2.0):
+    def __init__(self, timeout=2.0, log_callback=None):
         """
         Initialize the ChannelScraper.
 
@@ -16,6 +17,8 @@ class ChannelScraper:
             Timeout between requests in seconds (default: 2.0)
         """
         self.timeout = timeout
+        self.log_callback = log_callback
+        self.cookie_manager = CookieManager(log_callback=self.log_callback)
 
     def scrape_channel(self, url, max_videos_per_playlist=200, progress_callback=None):
         """
@@ -67,7 +70,7 @@ class ChannelScraper:
             # Scrape videos from each playlist
             for playlist in playlists:
                 try:
-                    scraper = PlaylistScraper(timeout=self.timeout)
+                    scraper = PlaylistScraper(timeout=self.timeout, log_callback=self.log_callback)
                     
                     # Create a nested progress callback for playlist scraping
                     def nested_progress(current, total, percentage):
@@ -156,11 +159,14 @@ class ChannelScraper:
             Channel name
         """
         try:
+            cookie_file = self.cookie_manager.get_cookie_file()
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,
             }
+            if cookie_file:
+                ydl_opts['cookies'] = cookie_file
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -185,16 +191,18 @@ class ChannelScraper:
             List of playlist dictionaries: [{'title': str, 'url': str}, ...]
         """
         playlists = []
+        playlists_url = f"{channel_url}/playlists"
 
         try:
             # Try to get playlists from channel's playlists tab
-            playlists_url = f"{channel_url}/playlists"
-
+            cookie_file = self.cookie_manager.get_cookie_file()
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,
             }
+            if cookie_file:
+                ydl_opts['cookies'] = cookie_file
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(playlists_url, download=False)
@@ -233,16 +241,18 @@ class ChannelScraper:
             List of video info dictionaries
         """
         videos = []
+        videos_url = f"{channel_url}/videos"
 
         try:
             # Get videos from channel's videos tab
-            videos_url = f"{channel_url}/videos"
-
+            cookie_file = self.cookie_manager.get_cookie_file()
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,
             }
+            if cookie_file:
+                ydl_opts['cookies'] = cookie_file
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(videos_url, download=False)

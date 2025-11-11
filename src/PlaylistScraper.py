@@ -2,9 +2,10 @@ import yt_dlp
 import time
 import logging
 from urllib.parse import urlparse, parse_qs
+from .CookieManager import CookieManager
 
 class PlaylistScraper:
-    def __init__(self, timeout=2.0):
+    def __init__(self, timeout=2.0, log_callback=None):
         """
         Initialize the PlaylistScraper.
 
@@ -14,6 +15,8 @@ class PlaylistScraper:
             Timeout between requests in seconds (default: 2.0)
         """
         self.timeout = timeout
+        self.log_callback = log_callback
+        self.cookie_manager = CookieManager(log_callback=self.log_callback)
 
     def _is_youtube_mix(self, playlist_id):
         """
@@ -66,8 +69,6 @@ class PlaylistScraper:
                 
                 # Check if it's a YouTube mix
                 if self._is_youtube_mix(playlist_id):
-                    # For YouTube mixes, we can try to access them as watch URLs with list parameter
-                    # This is sometimes more reliable than using the playlist URL directly
                     video_id = query_params.get('v', [None])[0]  # Extract video ID if available
                     if video_id:
                         return f"https://www.youtube.com/watch?v={video_id}&list={playlist_id}"
@@ -117,11 +118,14 @@ class PlaylistScraper:
             # Use different options for YouTube mixes
             is_youtube_mix = playlist_id and self._is_youtube_mix(playlist_id)
             
+            cookie_file = self.cookie_manager.get_cookie_file()
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,  # Don't download, just extract info
             }
+            if cookie_file:
+                ydl_opts['cookies'] = cookie_file
             
             # For YouTube mixes, we might need to bypass some restrictions
             if is_youtube_mix:
@@ -207,11 +211,14 @@ class PlaylistScraper:
             # Use different options for YouTube mixes
             is_youtube_mix = playlist_id and self._is_youtube_mix(playlist_id)
             
+            cookie_file = self.cookie_manager.get_cookie_file()
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,
             }
+            if cookie_file:
+                ydl_opts['cookies'] = cookie_file
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 try:

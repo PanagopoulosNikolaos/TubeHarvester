@@ -6,6 +6,7 @@ from .Mp4_Converter import YouTubeDownloader
 from .Mp3_Converter import MP3Downloader
 from pathlib import Path
 from .BatchDownloader import BatchDownloader
+from .CookieManager import CookieManager
 
 class SingleDownloadPanel(ttk.Frame):
     def __init__(self, parent):
@@ -133,7 +134,7 @@ class SingleDownloadPanel(ttk.Frame):
             return # Silently return if no URL
 
         try:
-            downloader = YouTubeDownloader()
+            downloader = YouTubeDownloader(log_callback=self.log_message)
             downloader.set_url(url)
             info = downloader.fetch_video_info()
             formats = info.get('formats', [])

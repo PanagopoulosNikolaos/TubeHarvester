@@ -2,6 +2,7 @@ import os
 import logging
 import yt_dlp
 from tkinter import messagebox
+from .CookieManager import CookieManager
 
 logging.basicConfig(level=logging.INFO)
 
@@ -27,6 +28,7 @@ class MP3Downloader:
         self.save_path = save_path if save_path else self.get_default_download_path()
         self.progress_callback = progress_callback
         self.log_callback = log_callback
+        self.cookie_manager = CookieManager(log_callback=self.log_callback)
 
     def set_url(self, url):
         """
@@ -92,7 +94,14 @@ class MP3Downloader:
             If the download and conversion fails, an exception is raised with a message describing the error.
         """
         try:
-            with yt_dlp.YoutubeDL({}) as ydl:
+            cookie_file = self.cookie_manager.get_cookie_file()
+            ydl_opts = {
+                'noplaylist': True,
+            }
+            if cookie_file:
+                ydl_opts['cookies'] = cookie_file
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(self.url, download=False)
                 title = custom_title or info.get('title', 'Unknown Title')
 
@@ -110,8 +119,11 @@ class MP3Downloader:
                 'progress_hooks': [self.progress_hook],
                 'keepvideo': False, # changed to False to remove the original video file after conversion
                 'quiet': True, # to suppress yt-dlp output
-                'no_warnings': True # to suppress yt-dlp warnings
+                'no_warnings': True, # to suppress yt-dlp warnings
+                'noplaylist': True,
             }
+            if cookie_file:
+                options['cookies'] = cookie_file
 
             with yt_dlp.YoutubeDL(options) as ydl:
                 ydl.download([self.url])
