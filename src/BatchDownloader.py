@@ -10,16 +10,12 @@ from .Mp3_Converter import MP3Downloader
 class BatchDownloader:
     def __init__(self, max_workers=3, progress_callback=None, log_callback=None):
         """
-        Initialize the BatchDownloader.
+        Initialize the BatchDownloader with thread management for concurrent downloads.
 
-        Parameters
-        ----------
-        max_workers : int
-            Maximum number of concurrent downloads (default: 3)
-        progress_callback : callable
-            Function to call with overall progress percentage
-        log_callback : callable
-            Function to call with log messages
+        Args:
+            max_workers (int): Maximum number of concurrent downloads (default: 3)
+            progress_callback (callable): Function to call with overall progress percentage
+            log_callback (callable): Function to call with log messages
         """
         self.max_workers = max_workers
         self.progress_callback = progress_callback
@@ -28,27 +24,20 @@ class BatchDownloader:
         self.total_videos = 0
         self.completed_videos = 0
         self.lock = threading.Lock()
-        self.last_progress_update = 0  # Track the last progress percentage to avoid spam
+        self.last_progress_update = 0  # track the last progress percentage to avoid spam
 
     def download_batch(self, video_list, format_type, base_path, quality="highest"):
         """
-        Download a batch of videos.
+        Download a batch of videos concurrently with progress tracking.
 
-        Parameters
-        ----------
-        video_list : list
-            List of video info dictionaries: [{'url': str, 'title': str, 'folder': str}, ...]
-        format_type : str
-            'MP4' or 'MP3'
-        base_path : str
-            Base directory for downloads
-        quality : str
-            Quality setting ('highest', 'best', etc.)
+        Args:
+            video_list (list): List of video info dictionaries: [{'url': str, 'title': str, 'folder': str}, ...]
+            format_type (str): 'MP4' or 'MP3'
+            base_path (str): Base directory for downloads
+            quality (str): Quality setting ('highest', 'best', etc.)
 
-        Returns
-        -------
-        dict
-            Results summary: {'successful': int, 'failed': int, 'errors': [str, ...]}
+        Returns:
+            dict: Results summary: {'successful': int, 'failed': int, 'errors': [str, ...]}
         """
         self.total_videos = len(video_list)
         self.completed_videos = 0
@@ -112,12 +101,12 @@ class BatchDownloader:
                         if self.progress_callback:
                             self.progress_callback(int(overall_progress))
 
-                        # Only log progress updates at certain intervals to avoid spam
+                        # only log progress updates at certain intervals to avoid spam
                         progress_percent = int(overall_progress)
-                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):  # Update every 5% or at completion
+                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):  # update every 5% or at completion
                             self.last_progress_update = progress_percent
                             if self.log_callback:
-                                # Create a visual progress bar
+                                # create a visual progress bar
                                 bar_length = 20
                                 filled_length = int(bar_length * self.completed_videos // self.total_videos)
                                 bar = '[' + '=' * filled_length + '>' + ' ' * (bar_length - filled_length - 1) + ']'
@@ -136,12 +125,12 @@ class BatchDownloader:
                         if self.progress_callback:
                             self.progress_callback(int(overall_progress))
 
-                        # Only log progress updates at certain intervals to avoid spam
+                        # only log progress updates at certain intervals to avoid spam
                         progress_percent = int(overall_progress)
-                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):  # Update every 5% or at completion
+                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):  # update every 5% or at completion
                             self.last_progress_update = progress_percent
                             if self.log_callback:
-                                # Create a visual progress bar
+                                # create a visual progress bar
                                 bar_length = 20
                                 filled_length = int(bar_length * self.completed_videos // self.total_videos)
                                 bar = '[' + '=' * filled_length + '>' + ' ' * (bar_length - filled_length - 1) + ']'
@@ -157,30 +146,27 @@ class BatchDownloader:
         return results
 
     def cancel_download(self):
-        """Cancel the current batch download."""
+        """
+        Cancel the current batch download operation.
+
+        Sets the threading event to signal all download threads to stop.
+        """
         self.cancel_event.set()
         if self.log_callback:
             self.log_callback("Cancelling batch download...")
 
     def _download_single_video(self, video_info, format_type, folder_path, quality):
         """
-        Download a single video.
+        Download a single video using the appropriate downloader based on format.
 
-        Parameters
-        ----------
-        video_info : dict
-            Video information: {'url': str, 'title': str}
-        format_type : str
-            'MP4' or 'MP3'
-        folder_path : str
-            Path to save the video
-        quality : str
-            Quality setting
+        Args:
+            video_info (dict): Video information: {'url': str, 'title': str}
+            format_type (str): 'MP4' or 'MP3'
+            folder_path (str): Path to save the video
+            quality (str): Quality setting
 
-        Returns
-        -------
-        tuple
-            (success: bool, error_message: str)
+        Returns:
+            tuple: (success: bool, error_message: str)
         """
         try:
             if format_type.upper() == 'MP4':
@@ -189,12 +175,12 @@ class BatchDownloader:
                 downloader.set_url(video_info['url'])
                 downloader.set_path(folder_path)
 
-                # Set resolution based on quality
+                # set resolution based on quality
                 if quality.lower() == 'highest':
-                    # Will use the highest available resolution
-                    pass  # Default behavior
+                    # will use the highest available resolution
+                    pass # default behavior
                 else:
-                    # Could implement quality parsing here
+                    # could implement quality parsing here
                     pass
 
                 downloader.download_video()
@@ -218,19 +204,13 @@ class BatchDownloader:
         Create organized folder structure for downloads following the plan:
         ~/Music (MP3) or ~/Videos (MP4)/ChannelName/PlaylistName/ or Random/
 
-        Parameters
-        ----------
-        video_list : list
-            List of video info dictionaries with 'folder' key containing 'ChannelName/PlaylistName' or 'ChannelName/Random'
-        base_path : str
-            Base directory path
-        format_type : str
-            'MP4' or 'MP3'
+        Args:
+            video_list (list): List of video info dictionaries with 'folder' key containing 'ChannelName/PlaylistName' or 'ChannelName/Random'
+            base_path (str): Base directory path
+            format_type (str): 'MP4' or 'MP3'
 
-        Returns
-        -------
-        dict
-            Mapping of folder identifiers to full paths
+        Returns:
+            dict: Mapping of folder identifiers to full paths
         """
         organized_paths = {}
 

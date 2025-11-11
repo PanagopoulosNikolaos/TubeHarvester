@@ -6,26 +6,12 @@ from .CookieManager import CookieManager
 class YouTubeDownloader:
     def __init__(self, progress_callback=None, log_callback=None):
         """
-        Initializes a YouTubeDownloader object.
+        Initialize the YouTubeDownloader with progress and log callbacks.
 
-        Parameters
-        ----------
-        progress_callback : callable or None
-            A function that takes a single argument, an integer representing the download progress percentage,
-            that will be called every time the download progress changes. If None, no callback is used.
-
-        Attributes
-        ----------
-        url : str or None
-            The URL of the YouTube video to download. Set to None initially.
-
-        path : str
-            The path where the downloaded video will be saved. Defaults to the user's home directory, in a folder named
-            'Downloads'.
-
-        progress_callback : callable or None
-            A function that takes a single argument, an integer representing the download progress percentage,
-            that will be called every time the download progress changes. If None, no callback is used.
+        Args:
+            progress_callback (callable): A function that takes a single argument, an integer representing the download progress percentage,
+                                         that will be called every time the download progress changes. If None, no callback is used.
+            log_callback (callable): A function that will be called with log messages. If None, no log messages will be displayed.
         """
         self.url = None
         self.path = self.get_default_download_path()
@@ -38,42 +24,31 @@ class YouTubeDownloader:
     @staticmethod
     def get_default_download_path():
         """
-        Returns the default path where downloaded videos will be saved.
+        Get the default path where downloaded videos will be saved.
 
-        The default path is set to the user's home directory, in a folder named 'Downloads'.
+        Returns:
+            str: The default path where downloaded videos will be saved. The default path is set to the user's home directory, in a folder named 'Downloads'.
         """
         home_directory = os.path.expanduser('~')
         return os.path.join(home_directory, 'Downloads')
 
     def set_url(self, url):
         """
-        Sets the URL of the YouTube video to download.
+        Set the URL of the YouTube video to download.
 
-        Parameters
-        ----------
-        url : str
-            The URL of the YouTube video to download.
-
-        Returns
-        -------
-        None
+        Args:
+            url (str): The URL of the YouTube video to download.
         """
         
         self.url = url
 
     def set_path(self, path):
         """
-        Sets the path where the downloaded video will be saved.
+        Set the path where the downloaded video will be saved.
 
-        Parameters
-        ----------
-        path : str or None
-            The path where the downloaded video will be saved. If None, the default path (user's home directory, in a
-            folder named 'Downloads') is used.
-
-        Returns
-        -------
-        None
+        Args:
+            path (str): The path where the downloaded video will be saved. If None, the default path (user's home directory, in a
+                       folder named 'Downloads') is used.
         """
         self.path = path if path else self.get_default_download_path()
         if not os.path.exists(self.path):
@@ -91,10 +66,10 @@ class YouTubeDownloader:
             if self.log_callback:
                 self.log_callback(f"Download started: \"{self.video_title}\" - Resolution: {self.resolution}p. Saved at: \"{self.path}\"")
 
-            # Download audio
+            # download audio stream separately for better quality control
             self._download_stream('bestaudio', 'audio_temp', 0, 50)
 
-            # Download video
+            # download video stream separately for better quality control
             self._download_stream(f'bestvideo[height<={self.resolution}]', 'video_temp', 50, 100)
 
             self._merge_files()
@@ -118,7 +93,7 @@ class YouTubeDownloader:
 
     def fetch_video_info(self):
         """
-        Fetches video information without downloading.
+        Fetch video information without downloading.
 
         This method is intended to be called from the GUI to populate resolution choices.
         """
@@ -158,7 +133,7 @@ class YouTubeDownloader:
         if self.log_callback:
             self.log_callback("Merging audio and video...")
 
-        # Find temporary files
+        # find temporary files for merging
         temp_files = [f for f in os.listdir(self.path) if f.startswith('video_temp') or f.startswith('audio_temp')]
         video_file = next((f for f in temp_files if f.startswith('video_temp')), None)
         audio_file = next((f for f in temp_files if f.startswith('audio_temp')), None)
@@ -172,7 +147,7 @@ class YouTubeDownloader:
         audio_path = os.path.join(self.path, audio_file)
         output_path = os.path.join(self.path, f"{self.video_title}.mp4")
 
-        # Use ffmpeg to merge
+        # use ffmpeg to merge audio and video streams
         command = f"ffmpeg -i \"{video_path}\" -i \"{audio_path}\" -c:v copy -c:a aac \"{output_path}\""
 
         try:
@@ -183,7 +158,7 @@ class YouTubeDownloader:
             if self.log_callback:
                 self.log_callback(f"Error during merge: {e}")
         finally:
-            # Clean up temporary files
+            # clean up temporary files after merging
             os.remove(video_path)
             os.remove(audio_path)
 
@@ -193,7 +168,7 @@ class YouTubeDownloader:
             downloaded_bytes = d.get('downloaded_bytes', 0)
 
             if total_bytes > 0:
-                percentage = (downloaded_bytes / total_bytes) * 100
+                percentage = (downloaded_bytes / total_bytes) * 10
                 scaled_progress = start_progress + (percentage / 100) * (end_progress - start_progress)
 
                 if self.progress_callback:

@@ -9,20 +9,13 @@ logging.basicConfig(level=logging.INFO)
 class MP3Downloader:
     def __init__(self, url=None, save_path=None, progress_callback=None, log_callback=None):
         """
-        Initializes an instance of the MP3Downloader class.
+        Initialize the MP3Downloader with URL, save path, and callback functions.
 
-        Parameters
-        ----------
-        url : str, optional
-            The URL of the YouTube video to download. If not provided, must be set using set_url() before downloading.
-        save_path : str, optional
-            The path where the downloaded MP3 file will be saved. If not provided, defaults to the user's home directory.
-        progress_callback : function, optional
-            A function that will be called with the percentage of download progress as an argument. If not provided, no progress messages will be displayed.
-
-        Returns
-        -------
-        None
+        Args:
+            url (str): The URL of the YouTube video to download. If not provided, must be set using set_url() before downloading.
+            save_path (str): The path where the downloaded MP3 file will be saved. If not provided, defaults to the user's home directory.
+            progress_callback (function): A function that will be called with the percentage of download progress as an argument. If not provided, no progress messages will be displayed.
+            log_callback (function): A function that will be called with log messages. If not provided, no log messages will be displayed.
         """
         self.url = url
         self.save_path = save_path if save_path else self.get_default_download_path()
@@ -32,43 +25,29 @@ class MP3Downloader:
 
     def set_url(self, url):
         """
-        Sets the URL of the YouTube video to download.
+        Set the URL of the YouTube video to download.
 
-        Parameters
-        ----------
-        url : str
-            The URL of the YouTube video to download.
-
-        Returns
-        -------
-        None
+        Args:
+            url (str): The URL of the YouTube video to download.
         """
         self.url = url
 
     def set_path(self, save_path):
         """
-        Sets the path where the downloaded MP3 file will be saved.
+        Set the path where the downloaded MP3 file will be saved.
 
-        Parameters
-        ----------
-        save_path : str, optional
-            The path where the downloaded MP3 file will be saved. If not provided, defaults to the user's home directory.
-
-        Returns
-        -------
-        None
+        Args:
+            save_path (str): The path where the downloaded MP3 file will be saved. If not provided, defaults to the user's home directory.
         """
         self.save_path = save_path if save_path else self.get_default_download_path()
 
     @staticmethod
     def get_default_download_path():
         """
-        Returns the default path where downloaded files are saved.
+        Get the default path where downloaded files are saved.
 
-        Returns
-        -------
-        str
-            The default path where downloaded files are saved. This is the user's home directory.
+        Returns:
+            str: The default path where downloaded files are saved. This is the user's home directory.
         """
         home_directory = os.path.expanduser('~')
         return os.path.join(home_directory, 'Downloads')
@@ -76,22 +55,16 @@ class MP3Downloader:
     def download_as_mp3(self, custom_title=None):
 
         """
-        Downloads the audio from a YouTube video as an MP3 file and saves it to the path set by set_path() or the default path.
+        Download the audio from a YouTube video as an MP3 file and save it to the path set by set_path() or the default path.
 
-        Parameters
-        ----------
-        custom_title : str, optional
-            Custom title for the downloaded file. If None, uses the video's original title.
+        Args:
+            custom_title (str): Custom title for the downloaded file. If None, uses the video's original title.
 
-        Returns
-        -------
-        str
-            The path where the downloaded MP3 file was saved.
+        Returns:
+            str: The path where the downloaded MP3 file was saved.
 
-        Raises
-        ------
-        Exception
-            If the download and conversion fails, an exception is raised with a message describing the error.
+        Raises:
+            Exception: If the download and conversion fails, an exception is raised with a message describing the error.
         """
         try:
             cookie_file = self.cookie_manager.get_cookie_file()
@@ -117,9 +90,9 @@ class MP3Downloader:
                 }],
                 'outtmpl': os.path.join(self.save_path, f'{title}.%(ext)s'),
                 'progress_hooks': [self.progress_hook],
-                'keepvideo': False, # changed to False to remove the original video file after conversion
-                'quiet': True, # to suppress yt-dlp output
-                'no_warnings': True, # to suppress yt-dlp warnings
+                'keepvideo': False, # remove original video file after audio extraction
+                'quiet': True, # suppress yt-dlp output
+                'no_warnings': True, # suppress yt-dlp warnings
                 'noplaylist': True,
             }
             if cookie_file:
@@ -150,17 +123,10 @@ class MP3Downloader:
 
     def progress_hook(self, d):
         """
-        Updates the progress bar in the GUI with the given percentage value.
+        Update the progress bar in the GUI with the given percentage value.
 
-        Parameters
-        ----------
-        d : dict
-            A dictionary with information about the download progress.
-
-        Notes
-        -----
-        If the status is 'downloading', the progress bar is updated with a percentage value calculated from the total_bytes and downloaded_bytes.
-        If the status is 'finished', the progress bar is set to 100%.
+        Args:
+            d (dict): A dictionary with information about the download progress.
         """
 
         if d['status'] == 'downloading':
