@@ -9,6 +9,7 @@ A Python application for downloading YouTube videos, audio, playlists, and chann
 - Batch download multiple videos
 - Scrape and download entire YouTube playlists
 - Scrape and download all videos from a YouTube channel
+- Handle YouTube authentication with automatic cookie extraction from browsers
 - Simple graphical user interface (GUI)
 
 ## Project Structure
@@ -23,6 +24,7 @@ TubeHarvester/
 ├── src
 │   ├── BatchDownloader.py
 │   ├── ChannelScraper.py
+│   ├── CookieManager.py
 │   ├── GUI.py
 │   ├── __init__.py
 │   ├── Mp3_Converter.py
@@ -33,6 +35,7 @@ TubeHarvester/
     ├── test_batch_downloader.py
     ├── test_batch_mp3_downloading.py
     ├── test_channel_scraper.py
+    ├── test_cookie_manager.py
     ├── test_gui.py
     ├── test_mp3_converter.py
     ├── test_mp4_converter.py
