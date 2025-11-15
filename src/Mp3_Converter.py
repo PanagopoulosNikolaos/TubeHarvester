@@ -3,6 +3,7 @@ import logging
 import yt_dlp
 from tkinter import messagebox
 from .CookieManager import CookieManager
+from .utils import sanitize_filename
 
 logging.basicConfig(level=logging.INFO)
 
@@ -76,7 +77,7 @@ class MP3Downloader:
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(self.url, download=False)
-                title = custom_title or info.get('title', 'Unknown Title')
+                title = sanitize_filename(custom_title or info.get('title', 'Unknown Title'))
 
             if self.log_callback:
                 self.log_callback(f"Download started: \"{title}\" - Format: MP3. Saved at: \"{self.save_path}\"")

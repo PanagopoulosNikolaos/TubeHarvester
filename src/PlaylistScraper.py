@@ -3,6 +3,7 @@ import time
 import logging
 from urllib.parse import urlparse, parse_qs
 from .CookieManager import CookieManager
+from .utils import sanitize_filename
 
 class PlaylistScraper:
     def __init__(self, timeout=2.0, log_callback=None):
@@ -148,7 +149,7 @@ class PlaylistScraper:
                             # add the entry even if it has missing fields, using defaults
                             video_data = {
                                 'url': video_url,
-                                'title': entry.get('title', 'Unknown Title'),
+                                'title': sanitize_filename(entry.get('title', 'Unknown Title')),
                                 'duration': entry.get('duration', 0)
                             }
                             videos.append(video_data)
@@ -204,7 +205,7 @@ class PlaylistScraper:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 try:
                     info = ydl.extract_info(normalized_url, download=False)
-                    return info.get('title', 'Unknown Playlist')
+                    return sanitize_filename(info.get('title', 'Unknown Playlist'))
                 except yt_dlp.DownloadError as e:
                     # if the first attempt fails for a mix, try alternative approach
                     if is_youtube_mix and 'v' in query_params:
@@ -212,7 +213,7 @@ class PlaylistScraper:
                         video_id = query_params['v'][0]
                         watch_url = f"https://www.youtube.com/watch?v={video_id}&list={playlist_id}"
                         info = ydl.extract_info(watch_url, download=False)
-                        return info.get('title', 'Unknown Playlist')
+                        return sanitize_filename(info.get('title', 'Unknown Playlist'))
                     else:
                         raise e
 

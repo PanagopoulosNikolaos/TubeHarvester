@@ -13,7 +13,18 @@ class TestSingleDownloadPanel:
         """Initialize Tk root and panel instance."""
         self.root = tk.Tk()
         self.root.withdraw()  # Hide the root window for testing
-        self.panel = SingleDownloadPanel(self.root)
+        self.colors = {
+            "BACKGROUND_COLOR": "#22272e",
+            "SECONDARY_BACKGROUND_COLOR": "#2d333b",
+            "TERTIARY_BACKGROUND_COLOR": "#323842",
+            "FOREGROUND_COLOR": "#adbac7",
+            "TEXT_SECONDARY_COLOR": "#768390",
+            "ACCENT_COLOR": "#58a6ff",
+            "ACCENT_COLOR_DARK": "#4883c8",
+            "BORDER_COLOR": "#444c56",
+            "TEXT_INACTIVE_COLOR": "#768390",
+        }
+        self.panel = SingleDownloadPanel(self.root, self.colors)
 
     def teardown_method(self):
         """Destroy Tk root window."""
@@ -162,7 +173,18 @@ class TestBatchDownloadPanel:
         """Initialize Tk root and panel instance."""
         self.root = tk.Tk()
         self.root.withdraw()  # Hide the root window for testing
-        self.panel = BatchDownloadPanel(self.root)
+        self.colors = {
+            "BACKGROUND_COLOR": "#22272e",
+            "SECONDARY_BACKGROUND_COLOR": "#2d333b",
+            "TERTIARY_BACKGROUND_COLOR": "#323842",
+            "FOREGROUND_COLOR": "#adbac7",
+            "TEXT_SECONDARY_COLOR": "#768390",
+            "ACCENT_COLOR": "#58a6ff",
+            "ACCENT_COLOR_DARK": "#4883c8",
+            "BORDER_COLOR": "#444c56",
+            "TEXT_INACTIVE_COLOR": "#768390",
+        }
+        self.panel = BatchDownloadPanel(self.root, self.colors)
 
     def teardown_method(self):
         """Destroy Tk root window."""

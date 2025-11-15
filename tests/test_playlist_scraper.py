@@ -42,9 +42,9 @@ class TestPlaylistScraper:
         videos = self.scraper.scrape_playlist(self.test_url, max_videos=5)
 
         expected_videos = [
-            {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video 1', 'duration': 300},
-            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video 2', 'duration': 250},
-            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video 3', 'duration': 400}
+            {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video_1', 'duration': 300},
+            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video_2', 'duration': 250},
+            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video_3', 'duration': 400}
         ]
 
         assert videos == expected_videos
@@ -74,9 +74,9 @@ class TestPlaylistScraper:
 
         # Should only return first 3 videos
         assert len(videos) == 3
-        assert videos[0]['title'] == 'Video 1'
-        assert videos[1]['title'] == 'Video 2'
-        assert videos[2]['title'] == 'Video 3'
+        assert videos[0]['title'] == 'Video_1'
+        assert videos[1]['title'] == 'Video_2'
+        assert videos[2]['title'] == 'Video_3'
 
     @patch('yt_dlp.YoutubeDL')
     def test_scrape_playlist_no_entries(self, mock_ydl_class):
@@ -129,8 +129,8 @@ class TestPlaylistScraper:
 
         # Should skip None entries
         expected_videos = [
-            {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video 1', 'duration': 300},
-            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video 2', 'duration': 250}
+            {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video_1', 'duration': 300},
+            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video_2', 'duration': 250}
         ]
 
         assert videos == expected_videos
@@ -160,7 +160,7 @@ class TestPlaylistScraper:
 
         title = self.scraper.get_playlist_title(self.test_url)
 
-        assert title == 'Test Playlist'
+        assert title == 'Test_Playlist'
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
 
     @patch('yt_dlp.YoutubeDL')
@@ -219,9 +219,9 @@ class TestPlaylistScraper:
         videos = self.scraper.scrape_playlist(self.test_url)
 
         expected_videos = [
-            {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Unknown Title', 'duration': 0},
-            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video 2', 'duration': 0},
-            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video 3', 'duration': 400}
+            {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Unknown_Title', 'duration': 0},
+            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video_2', 'duration': 0},
+            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video_3', 'duration': 400}
         ]
 
         assert videos == expected_videos

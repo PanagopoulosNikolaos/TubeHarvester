@@ -5,6 +5,7 @@ import re
 from urllib.parse import urlparse, parse_qs
 from .PlaylistScraper import PlaylistScraper
 from .CookieManager import CookieManager
+from .utils import sanitize_filename
 
 class ChannelScraper:
     def __init__(self, timeout=2.0, log_callback=None):
@@ -248,7 +249,7 @@ class ChannelScraper:
                             if video_url and entry.get('title'):
                                 video_data = {
                                     'url': video_url,
-                                    'title': entry.get('title', 'Unknown Title'),
+                                    'title': sanitize_filename(entry.get('title', 'Unknown Title')),
                                     'duration': entry.get('duration', 0)
                                 }
                                 videos.append(video_data)

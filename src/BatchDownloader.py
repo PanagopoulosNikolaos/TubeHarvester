@@ -6,6 +6,7 @@ from pathlib import Path
 import time
 from .Mp4_Converter import YouTubeDownloader
 from .Mp3_Converter import MP3Downloader
+from .utils import sanitize_filename
 
 class BatchDownloader:
     def __init__(self, max_workers=3, progress_callback=None, log_callback=None):
@@ -169,6 +170,9 @@ class BatchDownloader:
             tuple: (success: bool, error_message: str)
         """
         try:
+            # Sanitize the video title to ensure it's safe for filenames
+            sanitized_title = sanitize_filename(video_info['title'])
+            
             if format_type.upper() == 'MP4':
                 downloader = YouTubeDownloader()
 
@@ -183,13 +187,13 @@ class BatchDownloader:
                     # could implement quality parsing here
                     pass
 
-                downloader.download_video()
+                downloader.download_video(custom_title=sanitized_title)
 
             elif format_type.upper() == 'MP3':
                 downloader = MP3Downloader()
                 downloader.set_url(video_info['url'])
                 downloader.set_path(folder_path)
-                downloader.download_as_mp3()
+                downloader.download_as_mp3(custom_title=sanitized_title)
 
             else:
                 raise ValueError(f"Unsupported format: {format_type}")

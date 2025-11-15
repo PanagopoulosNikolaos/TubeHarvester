@@ -2,6 +2,7 @@ import os
 import yt_dlp
 import logging
 from .CookieManager import CookieManager
+from .utils import sanitize_filename
 
 class YouTubeDownloader:
     def __init__(self, progress_callback=None, log_callback=None):
@@ -60,7 +61,7 @@ class YouTubeDownloader:
 
         try:
             info = self._get_video_info()
-            self.video_title = custom_title or info.get('title', 'Unknown Title')
+            self.video_title = sanitize_filename(custom_title or info.get('title', 'Unknown Title'))
             self.resolution = info.get('height', 'Unknown Resolution')
 
             if self.log_callback:
@@ -168,7 +169,7 @@ class YouTubeDownloader:
             downloaded_bytes = d.get('downloaded_bytes', 0)
 
             if total_bytes > 0:
-                percentage = (downloaded_bytes / total_bytes) * 10
+                percentage = (downloaded_bytes / total_bytes) * 100
                 scaled_progress = start_progress + (percentage / 100) * (end_progress - start_progress)
 
                 if self.progress_callback:

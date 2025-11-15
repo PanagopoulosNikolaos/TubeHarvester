@@ -57,8 +57,8 @@ class TestChannelScraper:
         # Mock playlist scraper
         mock_playlist_scraper = Mock()
         mock_playlist_scraper.scrape_playlist.side_effect = [
-            [{'url': 'https://youtube.com/watch?v=pl1v1', 'title': 'PL1 Video 1', 'duration': 100}],
-            [{'url': 'https://youtube.com/watch?v=pl2v1', 'title': 'PL2 Video 1', 'duration': 200}]
+            [{'url': 'https://youtube.com/watch?v=pl1v1', 'title': 'PL1_Video_1', 'duration': 100}],
+            [{'url': 'https://youtube.com/watch?v=pl2v1', 'title': 'PL2_Video_1', 'duration': 200}]
         ]
         mock_playlist_scraper_class.return_value = mock_playlist_scraper
 
@@ -70,17 +70,17 @@ class TestChannelScraper:
                 {
                     'title': 'Playlist 1',
                     'url': 'https://youtube.com/playlist?list=PL1',
-                    'videos': [{'url': 'https://youtube.com/watch?v=pl1v1', 'title': 'PL1 Video 1', 'duration': 100}]
+                    'videos': [{'url': 'https://youtube.com/watch?v=pl1v1', 'title': 'PL1_Video_1', 'duration': 100}]
                 },
                 {
                     'title': 'Playlist 2',
                     'url': 'https://youtube.com/playlist?list=PL2',
-                    'videos': [{'url': 'https://youtube.com/watch?v=pl2v1', 'title': 'PL2 Video 1', 'duration': 200}]
+                    'videos': [{'url': 'https://youtube.com/watch?v=pl2v1', 'title': 'PL2_Video_1', 'duration': 200}]
                 }
             ],
             'standalone_videos': [
-                {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Standalone Video 1', 'duration': 300},
-                {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Standalone Video 2', 'duration': 250}
+                {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Standalone_Video_1', 'duration': 300},
+                {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Standalone_Video_2', 'duration': 250}
             ]
         }
 
@@ -211,9 +211,9 @@ class TestChannelScraper:
         videos = self.scraper._get_standalone_videos(self.test_url, max_videos=5)
 
         expected_videos = [
-            {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video 1', 'duration': 300},
-            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video 2', 'duration': 250},
-            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video 3', 'duration': 400}
+            {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video_1', 'duration': 300},
+            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video_2', 'duration': 250},
+            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video_3', 'duration': 400}
         ]
 
         assert videos == expected_videos
@@ -238,8 +238,8 @@ class TestChannelScraper:
 
         # Should only return first 2 videos
         assert len(videos) == 2
-        assert videos[0]['title'] == 'Video 1'
-        assert videos[1]['title'] == 'Video 2'
+        assert videos[0]['title'] == 'Video_1'
+        assert videos[1]['title'] == 'Video_2'
 
     @patch('yt_dlp.YoutubeDL')
     def test_get_standalone_videos_failure(self, mock_ydl_class):

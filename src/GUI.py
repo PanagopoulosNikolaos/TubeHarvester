@@ -7,6 +7,8 @@ from .Mp3_Converter import MP3Downloader
 from pathlib import Path
 from .BatchDownloader import BatchDownloader
 from .CookieManager import CookieManager
+from .utils import sanitize_filename
+
 
 class SingleDownloadPanel(ttk.Frame):
     def __init__(self, parent, colors):
@@ -271,13 +273,9 @@ class BatchDownloadPanel(ttk.Frame):
         self.cancel_button = ttk.Button(controls_frame, text="Cancel", command=self.cancel_download, state=tk.DISABLED)
         self.cancel_button.grid(row=0, column=1, sticky="ew", padx=(5, 0))
 
-        # Progress and Log Frame
-        progress_log_frame = ttk.LabelFrame(main_frame, text="Status", padding="10 10 10 10")
-        progress_log_frame.pack(expand=True, fill=tk.BOTH, pady=5)
-
         # Fetching Data Progress Bar
-        self.fetch_progress_frame = ttk.Frame(progress_log_frame)
-        self.fetch_progress_frame.pack(fill=tk.X, pady=5)
+        self.fetch_progress_frame = ttk.Frame(controls_frame)
+        self.fetch_progress_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
         
         self.fetch_label = ttk.Label(self.fetch_progress_frame, text="Fetching Data:", font=('Courier', 9, 'bold'))
         self.fetch_label.pack(anchor='w')
@@ -289,11 +287,11 @@ class BatchDownloadPanel(ttk.Frame):
         self.fetch_status_label.pack(anchor='w')
         
         # Hide fetch progress initially
-        self.fetch_progress_frame.pack_forget()
+        self.fetch_progress_frame.grid_remove()
 
         # Download Progress Bar
-        self.download_progress_frame = ttk.Frame(progress_log_frame)
-        self.download_progress_frame.pack(fill=tk.X, pady=5)
+        self.download_progress_frame = ttk.Frame(controls_frame) # Change parent to controls_frame
+        self.download_progress_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=5) # Use grid for placement
         
         self.download_label = ttk.Label(self.download_progress_frame, text="Download Progress:", font=('Courier', 9, 'bold'))
         self.download_label.pack(anchor='w')
@@ -302,7 +300,11 @@ class BatchDownloadPanel(ttk.Frame):
         self.progress.pack(fill=tk.X, pady=2)
         
         # Hide download progress initially
-        self.download_progress_frame.pack_forget()
+        self.download_progress_frame.grid_remove() # Use grid_remove instead of pack_forget
+
+        # Progress and Log Frame (now only contains message_screen)
+        progress_log_frame = ttk.LabelFrame(main_frame, text="Status", padding="10 10 10 10")
+        progress_log_frame.pack(expand=True, fill=tk.BOTH, pady=5)
 
         self.message_screen = Text(progress_log_frame, height=10, width=75, font=('Courier', 9), 
                                    fg=self.colors["FOREGROUND_COLOR"], bg=self.colors["SECONDARY_BACKGROUND_COLOR"], insertbackground=self.colors["ACCENT_COLOR"],
@@ -378,7 +380,7 @@ class BatchDownloadPanel(ttk.Frame):
             self.batch_downloader = None
 
             # show fetch progress bar
-            self.fetch_progress_frame.pack(fill=tk.X, pady=5)
+            self.fetch_progress_frame.grid()
             self.fetch_progress['value'] = 0
             self.fetch_status_label.config(text="")
 
@@ -402,11 +404,11 @@ class BatchDownloadPanel(ttk.Frame):
 
                 # prepare video list for batch download
                 video_list = []
-                playlist_title = scraper.get_playlist_title(url)
+                playlist_title = sanitize_filename(scraper.get_playlist_title(url))
                 for video in videos:
                     video_list.append({
                         'url': video['url'],
-                        'title': video['title'],
+                        'title': sanitize_filename(video['title']),
                         'folder': f"Playlists/{playlist_title}"  # generic folder for playlist downloads
                     })
 
@@ -431,28 +433,28 @@ class BatchDownloadPanel(ttk.Frame):
 
                 # prepare video list for batch download
                 video_list = []
-                channel_name = channel_info['channel_name']
+                channel_name = sanitize_filename(channel_info['channel_name'])
 
                 # add videos from playlists
                 for playlist in channel_info['playlists']:
                     for video in playlist['videos']:
                         video_list.append({
                             'url': video['url'],
-                            'title': video['title'],
-                            'folder': f"{channel_name}/{playlist['title']}"
+                            'title': sanitize_filename(video['title']),
+                            'folder': f"{channel_name}/{sanitize_filename(playlist['title'])}"
                         })
 
                 # add standalone videos
                 for video in channel_info['standalone_videos']:
                     video_list.append({
                         'url': video['url'],
-                        'title': video['title'],
+                        'title': sanitize_filename(video['title']),
                         'folder': f"{channel_name}/Random"
                     })
 
             # hide fetch progress bar and show download progress bar
-            self.fetch_progress_frame.pack_forget()
-            self.download_progress_frame.pack(fill=tk.X, pady=5)
+            self.fetch_progress_frame.grid_remove()
+            self.download_progress_frame.grid() # Change to grid()
             self.log_message("Data fetching complete. Starting downloads...")
 
             # start batch download
@@ -482,8 +484,8 @@ class BatchDownloadPanel(ttk.Frame):
 
         finally:
             # hide both progress bars
-            self.fetch_progress_frame.pack_forget()
-            self.download_progress_frame.pack_forget()
+            self.fetch_progress_frame.grid_remove()
+            self.download_progress_frame.grid_remove() # Change to grid_remove()
             
             # re-enable buttons
             self.download_button.config(state=tk.NORMAL)

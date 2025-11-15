@@ -136,7 +136,7 @@ class TestYouTubeDownloader:
         assert mock_ydl_class.call_count == 3
 
         # Verify merge command was executed
-        expected_command = f"ffmpeg -i \"{os.path.join(self.test_path, 'video_temp.mp4')}\" -i \"{os.path.join(self.test_path, 'audio_temp.m4a')}\" -c:v copy -c:a aac \"{os.path.join(self.test_path, 'Test Video.mp4')}\""
+        expected_command = f"ffmpeg -i \"{os.path.join(self.test_path, 'video_temp.mp4')}\" -i \"{os.path.join(self.test_path, 'audio_temp.m4a')}\" -c:v copy -c:a aac \"{os.path.join(self.test_path, 'Test_Video.mp4')}\""
         mock_system.assert_called_with(expected_command)
 
         # Verify cleanup was called
@@ -179,7 +179,7 @@ class TestYouTubeDownloader:
             self.downloader.download_video(custom_title="Custom Title")
 
         # Verify the title was set correctly
-        assert self.downloader.video_title == "Custom Title"
+        assert self.downloader.video_title == "Custom_Title"
 
     def test_progress_hook_downloading(self):
         """Test progress hook during downloading."""
