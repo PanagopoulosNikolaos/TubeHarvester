@@ -9,9 +9,10 @@ from .BatchDownloader import BatchDownloader
 from .CookieManager import CookieManager
 
 class SingleDownloadPanel(ttk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, colors):
         super().__init__(parent)
         self.master = parent
+        self.colors = colors
         self.downloader = None
         self.default_download_path = str(Path.home() / "Downloads")
         self.build_gui()
@@ -104,9 +105,9 @@ class SingleDownloadPanel(ttk.Frame):
 
         # message log display area - shows status messages and errors
         self.message_screen = Text(progress_log_frame, height=10, width=75, font=('Courier', 9), 
-                                   fg='#c9d1d9', bg='#161b22', insertbackground='#ffd700',
-                                   borderwidth=0, highlightthickness=1, highlightbackground='#ffd70',
-                                   selectbackground='#daa520', selectforeground='#ffffff')
+                                   fg=self.colors["FOREGROUND_COLOR"], bg=self.colors["SECONDARY_BACKGROUND_COLOR"], insertbackground=self.colors["ACCENT_COLOR"],
+                                   borderwidth=0, highlightthickness=1, highlightbackground=self.colors["ACCENT_COLOR"],
+                                   selectbackground=self.colors["ACCENT_COLOR_DARK"], selectforeground=self.colors["FOREGROUND_COLOR"])
         self.message_screen.pack(expand=True, fill=tk.BOTH, pady=5)
         self.message_screen.config(state=tk.DISABLED)
 
@@ -199,9 +200,10 @@ class SingleDownloadPanel(ttk.Frame):
         self.resolution_menu.config(state=tk.NORMAL if is_mp4 else tk.DISABLED)
 
 class BatchDownloadPanel(ttk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, colors):
         super().__init__(parent)
         self.master = parent
+        self.colors = colors
         self.build_gui()
         self._display_startup_info()
 
@@ -303,9 +305,9 @@ class BatchDownloadPanel(ttk.Frame):
         self.download_progress_frame.pack_forget()
 
         self.message_screen = Text(progress_log_frame, height=10, width=75, font=('Courier', 9), 
-                                   fg='#c9d1d9', bg='#161b22', insertbackground='#ffd700',
-                                   borderwidth=0, highlightthickness=1, highlightbackground='#ffd700',
-                                   selectbackground='#daa520', selectforeground='#ffffff')
+                                   fg=self.colors["FOREGROUND_COLOR"], bg=self.colors["SECONDARY_BACKGROUND_COLOR"], insertbackground=self.colors["ACCENT_COLOR"],
+                                   borderwidth=0, highlightthickness=1, highlightbackground=self.colors["ACCENT_COLOR"],
+                                   selectbackground=self.colors["ACCENT_COLOR_DARK"], selectforeground=self.colors["FOREGROUND_COLOR"])
         self.message_screen.pack(expand=True, fill=tk.BOTH, pady=5)
         self.message_screen.config(state=tk.DISABLED)
 
@@ -552,127 +554,128 @@ class YouTubeDownloaderGUI:
     def __init__(self, master):
         self.master = master
         self.master.title('TubeHarvester - YouTube Downloader')
-        self.master.geometry("750x650")
+        self.master.geometry("750x750")
         self.master.resizable(True, True)
-        
-        # Set dark background for root window
-        self.master.configure(bg='#0d1117')
 
-        # Style configuration - GitHub Dark Theme
+        # GitHub Dark Dimmed color palette
+        self.colors = {
+            "BACKGROUND_COLOR": "#22272e",
+            "SECONDARY_BACKGROUND_COLOR": "#2d333b",
+            "TERTIARY_BACKGROUND_COLOR": "#323842",
+            "FOREGROUND_COLOR": "#adbac7",
+            "TEXT_SECONDARY_COLOR": "#768390",
+            "ACCENT_COLOR": "#58a6ff",
+            "ACCENT_COLOR_DARK": "#4883c8",
+            "BORDER_COLOR": "#444c56",
+            "TEXT_INACTIVE_COLOR": "#768390",
+        }
+
+        # Set dark background for root window
+        self.master.configure(bg=self.colors["BACKGROUND_COLOR"])
+
+        # Style configuration
         style = ttk.Style(self.master)
         style.theme_use('clam')
-        
-        # GitHub Dark color palette with Gold accents
-        bg_dark = '#0d1117'          # Main background
-        bg_secondary = '#161b22'      # Secondary background
-        bg_tertiary = '#21262d'       # Tertiary background (hover)
-        border_color = '#30363d'      # Border color
-        text_color = '#c9d1d9'        # Main text
-        text_secondary = '#8b949e'    # Secondary text
-        accent_gold = '#ffd700'       # Gold accent
-        accent_gold_dark = '#daa520'  # Darker gold for hover
-        text_inactive = '#a0a0a0'     # Inactive tab text
-        
-        # Configure Notebook (tabs) - uniform size
-        style.configure("TNotebook", 
-                       background=bg_dark, 
-                       borderwidth=0,
-                       tabmargins=[0, 0, 0, 0])
-        
-        # Tab styling - FIXED WIDTH AND HEIGHT for consistency
-        style.configure("TNotebook.Tab", 
-                       background=bg_secondary,
-                       foreground=text_inactive,
-                       borderwidth=0,
-                       padding=[30, 12],  # Fixed padding for uniform size
-                       font=('Helvetica', 10, 'normal'))
-        
-        # Tab state styling - gold for active, gray for inactive
+
+        # Configure Notebook (tabs)
+        style.configure("TNotebook",
+                        background=self.colors["BACKGROUND_COLOR"],
+                        borderwidth=0,
+                        tabmargins=[0, 0, 0, 0])
+
+        # Tab styling
+        style.configure("TNotebook.Tab",
+                        background=self.colors["SECONDARY_BACKGROUND_COLOR"],
+                        foreground=self.colors["TEXT_INACTIVE_COLOR"],
+                        borderwidth=0,
+                        padding=[30, 12],
+                        font=('Helvetica', 10, 'normal'))
+
         style.map("TNotebook.Tab",
-                 background=[("selected", bg_tertiary), ("!selected", bg_secondary)],
-                 foreground=[("selected", accent_gold), ("!selected", text_inactive)],
-                 expand=[("selected", [0, 0, 0, 0])],  # No expansion on selection
-                 padding=[("selected", [30, 12]), ("!selected", [30, 12])])  # Same padding always
-        
+                  background=[("selected", self.colors["TERTIARY_BACKGROUND_COLOR"]), ("!selected", self.colors["SECONDARY_BACKGROUND_COLOR"])],
+                  foreground=[("selected", self.colors["ACCENT_COLOR"]), ("!selected", self.colors["TEXT_INACTIVE_COLOR"])],
+                  expand=[("selected", [0, 0, 0, 0])],
+                  padding=[("selected", [30, 12]), ("!selected", [30, 12])])
+
         # Frame styling
-        style.configure("TFrame", background=bg_dark, borderwidth=0)
-        
-        # LabelFrame styling - gold borders and labels
-        style.configure("TLabelframe", 
-                       background=bg_dark,
-                       bordercolor=accent_gold,
-                       borderwidth=1,
-                       relief='solid')
-        style.configure("TLabelframe.Label", 
-                       background=bg_dark,
-                       foreground=accent_gold,
-                       font=('Helvetica', 10, 'bold'))
-        
+        style.configure("TFrame", background=self.colors["BACKGROUND_COLOR"], borderwidth=0)
+
+        # LabelFrame styling
+        style.configure("TLabelframe",
+                        background=self.colors["BACKGROUND_COLOR"],
+                        bordercolor=self.colors["ACCENT_COLOR"],
+                        borderwidth=1,
+                        relief='solid')
+        style.configure("TLabelframe.Label",
+                        background=self.colors["BACKGROUND_COLOR"],
+                        foreground=self.colors["ACCENT_COLOR"],
+                        font=('Helvetica', 10, 'bold'))
+
         # Label styling
-        style.configure("TLabel", 
-                       background=bg_dark,
-                       foreground=text_color,
-                       padding=6,
-                       font=('Helvetica', 10))
-        
+        style.configure("TLabel",
+                        background=self.colors["BACKGROUND_COLOR"],
+                        foreground=self.colors["FOREGROUND_COLOR"],
+                        padding=6,
+                        font=('Helvetica', 10))
+
         # Entry styling
-        style.configure("TEntry", 
-                       fieldbackground=bg_secondary,
-                       foreground=text_color,
-                       bordercolor=border_color,
-                       lightcolor=border_color,
-                       darkcolor=border_color,
-                       borderwidth=1,
-                       insertcolor=accent_gold)
+        style.configure("TEntry",
+                        fieldbackground=self.colors["SECONDARY_BACKGROUND_COLOR"],
+                        foreground=self.colors["FOREGROUND_COLOR"],
+                        bordercolor=self.colors["BORDER_COLOR"],
+                        lightcolor=self.colors["BORDER_COLOR"],
+                        darkcolor=self.colors["BORDER_COLOR"],
+                        borderwidth=1,
+                        insertcolor=self.colors["ACCENT_COLOR"])
         style.map("TEntry",
-                 fieldbackground=[("focus", bg_tertiary)],
-                 bordercolor=[("focus", accent_gold)])
-        
+                  fieldbackground=[("focus", self.colors["TERTIARY_BACKGROUND_COLOR"])],
+                  bordercolor=[("focus", self.colors["ACCENT_COLOR"])])
+
         # Button styling
         style.configure("TButton",
-                       background=bg_secondary,
-                       foreground=text_color,
-                       bordercolor=accent_gold,
-                       lightcolor=accent_gold,
-                       darkcolor=accent_gold,
-                       borderwidth=1,
-                       padding=6,
-                       font=('Helvetica', 10))
+                        background=self.colors["SECONDARY_BACKGROUND_COLOR"],
+                        foreground=self.colors["FOREGROUND_COLOR"],
+                        bordercolor=self.colors["ACCENT_COLOR"],
+                        lightcolor=self.colors["ACCENT_COLOR"],
+                        darkcolor=self.colors["ACCENT_COLOR"],
+                        borderwidth=1,
+                        padding=6,
+                        font=('Helvetica', 10))
         style.map("TButton",
-                 background=[("active", bg_tertiary), ("pressed", accent_gold_dark)],
-                 foreground=[("active", accent_gold)],
-                 bordercolor=[("focus", accent_gold)])
-        
+                  background=[("active", self.colors["TERTIARY_BACKGROUND_COLOR"]), ("pressed", self.colors["ACCENT_COLOR_DARK"])],
+                  foreground=[("active", self.colors["ACCENT_COLOR"])],
+                  bordercolor=[("focus", self.colors["ACCENT_COLOR"])])
+
         # Radiobutton styling
         style.configure("TRadiobutton",
-                       background=bg_dark,
-                       foreground=text_color,
-                       bordercolor=border_color,
-                       font=('Helvetica', 10))
+                        background=self.colors["BACKGROUND_COLOR"],
+                        foreground=self.colors["FOREGROUND_COLOR"],
+                        bordercolor=self.colors["BORDER_COLOR"],
+                        font=('Helvetica', 10))
         style.map("TRadiobutton",
-                 background=[("active", bg_dark)],
-                 foreground=[("active", accent_gold)])
-        
+                  background=[("active", self.colors["BACKGROUND_COLOR"])],
+                  foreground=[("active", self.colors["ACCENT_COLOR"])])
+
         # Menubutton (OptionMenu) styling
         style.configure("TMenubutton",
-                       background=bg_secondary,
-                       foreground=text_color,
-                       bordercolor=accent_gold,
-                       borderwidth=1,
-                       padding=6,
-                       font=('Helvetica', 10))
+                        background=self.colors["SECONDARY_BACKGROUND_COLOR"],
+                        foreground=self.colors["FOREGROUND_COLOR"],
+                        bordercolor=self.colors["ACCENT_COLOR"],
+                        borderwidth=1,
+                        padding=6,
+                        font=('Helvetica', 10))
         style.map("TMenubutton",
-                 background=[("active", bg_tertiary)],
-                 foreground=[("active", accent_gold)])
-        
+                  background=[("active", self.colors["TERTIARY_BACKGROUND_COLOR"])],
+                  foreground=[("active", self.colors["ACCENT_COLOR"])])
+
         # Progressbar styling
         style.configure("TProgressbar",
-                       troughcolor=bg_secondary,
-                       background=accent_gold,
-                       bordercolor=accent_gold,
-                       lightcolor=accent_gold,
-                       darkcolor=accent_gold,
-                       borderwidth=1)
+                        troughcolor=self.colors["SECONDARY_BACKGROUND_COLOR"],
+                        background=self.colors["ACCENT_COLOR"],
+                        bordercolor=self.colors["ACCENT_COLOR"],
+                        lightcolor=self.colors["ACCENT_COLOR"],
+                        darkcolor=self.colors["ACCENT_COLOR"],
+                        borderwidth=1)
 
         # Create notebook (tabs)
         self.notebook = ttk.Notebook(self.master)
@@ -683,7 +686,7 @@ class YouTubeDownloaderGUI:
         self.notebook.add(self.single_tab, text="Single Download")
 
         # Single download panel
-        self.single_panel = SingleDownloadPanel(self.single_tab)
+        self.single_panel = SingleDownloadPanel(self.single_tab, colors=self.colors)
         self.single_panel.pack(expand=True, fill=tk.BOTH)
 
         # Batch download tab
@@ -691,7 +694,7 @@ class YouTubeDownloaderGUI:
         self.notebook.add(self.batch_tab, text="Batch Download")
 
         # Batch download panel
-        self.batch_panel = BatchDownloadPanel(self.batch_tab)
+        self.batch_panel = BatchDownloadPanel(self.batch_tab, colors=self.colors)
         self.batch_panel.pack(expand=True, fill=tk.BOTH)
 
 def run_gui():
