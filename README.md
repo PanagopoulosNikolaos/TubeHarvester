@@ -30,6 +30,9 @@ TubeHarvester/
 │   ├── Mp3_Converter.py
 │   ├── Mp4_Converter.py
 │   ├── PlaylistScraper.py
+├── images
+│   ├── batch_download.png
+│   └── single_download.png
 └── tests
     ├── __init__.py
     ├── test_batch_downloader.py
@@ -79,6 +82,18 @@ conda activate base_env && python main.py
 ## Usage
 
 The GUI will launch, allowing to enter YouTube URLs and select download options.
+
+## Screenshots
+
+Here are a couple of screenshots demonstrating the GUI and batch download flow:
+
+- **Single Download:**
+
+    ![Single Download](images/single_download.png)
+
+- **Batch Download:**
+
+    ![Batch Download](images/batch_download.png)
 
 ## License
 
