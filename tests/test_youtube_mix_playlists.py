@@ -22,14 +22,14 @@ def test_youtube_mix_detection():
     print("Testing YouTube mix detection...")
     
     for mix_id in mix_ids:
-        result = scraper._is_youtube_mix(mix_id)
+        result = scraper.isYoutubeMix(mix_id)
         print(f" {mix_id}: {'✓' if result else '✗'} (expected: ✓)")
         if not result:
             print(f"    ERROR: Failed to detect {mix_id} as a mix")
             return False
     
     for non_mix_id in non_mix_ids:
-        result = scraper._is_youtube_mix(non_mix_id)
+        result = scraper.isYoutubeMix(non_mix_id)
         print(f" {non_mix_id}: {'✗' if result else '✓'} (expected: ✓)")
         if result:
             print(f"    ERROR: Incorrectly detected {non_mix_id} as a mix")
@@ -44,13 +44,13 @@ def test_url_normalization():
     
     # Test a mix URL with video ID
     mix_url_with_video = "https://www.youtube.com/watch?v=xxx&list=RDNrIhy2b54NE"
-    normalized = scraper._normalize_playlist_url(mix_url_with_video)
+    normalized = scraper.normalizePlaylistUrl(mix_url_with_video)
     print(f"Mix URL normalization: {mix_url_with_video}")
     print(f"  Normalized: {normalized}")
     
     # Test a regular playlist URL
     regular_url = "https://www.youtube.com/playlist?list=PLxxxx"
-    normalized_regular = scraper._normalize_playlist_url(regular_url)
+    normalized_regular = scraper.normalizePlaylistUrl(regular_url)
     print(f"Regular URL normalization: {regular_url}")
     print(f"  Normalized: {normalized_regular}")
     
@@ -67,11 +67,11 @@ def test_actual_youtube_access():
     print(f"Testing access to YouTube mix: {mix_url}")
     try:
         # Try to get the playlist title first (this is less intensive)
-        title = scraper.get_playlist_title(mix_url)
+        title = scraper.getPlaylistTitle(mix_url)
         print(f"✓ Retrieved playlist title: {title}")
         
         # Try to scrape a few videos (limit to 5 to avoid long processing)
-        videos = scraper.scrape_playlist(mix_url, max_videos=5)
+        videos = scraper.scrapePlaylist(mix_url, max_videos=5)
         print(f"✓ Retrieved {len(videos)} videos from the mix")
         
         if videos:

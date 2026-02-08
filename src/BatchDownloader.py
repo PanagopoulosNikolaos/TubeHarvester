@@ -2,21 +2,26 @@ import os
 import threading
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
-import time
-from .Mp4_Converter import YouTubeDownloader
-from .Mp3_Converter import MP3Downloader
-from .utils import sanitize_filename
+from .Mp4_Converter import Mp4Downloader
+from .Mp3_Converter import Mp3Downloader
+from .utils import sanitizeFilename
 
 class BatchDownloader:
+    """
+    Manages concurrent downloads of multiple YouTube videos.
+
+    This class uses a ThreadPoolExecutor to handle multiple downloads in parallel,
+    tracking overall progress and allowing for cancellation.
+    """
+
     def __init__(self, max_workers=3, progress_callback=None, log_callback=None):
         """
-        Initialize the BatchDownloader with thread management for concurrent downloads.
+        Initializes the BatchDownloader with thread management.
 
         Args:
-            max_workers (int): Maximum number of concurrent downloads (default: 3)
-            progress_callback (callable): Function to call with overall progress percentage
-            log_callback (callable): Function to call with log messages
+            max_workers (int): Maximum number of concurrent downloads (default: 3).
+            progress_callback (callable, optional): Called with overall progress percentage.
+            log_callback (callable, optional): Called with log messages.
         """
         self.max_workers = max_workers
         self.progress_callback = progress_callback
@@ -25,20 +30,20 @@ class BatchDownloader:
         self.total_videos = 0
         self.completed_videos = 0
         self.lock = threading.Lock()
-        self.last_progress_update = 0  # track the last progress percentage to avoid spam
+        self.last_progress_update = 0
 
-    def download_batch(self, video_list, format_type, base_path, quality="highest"):
+    def downloadBatch(self, video_list, format_type, base_path, quality="highest"):
         """
-        Download a batch of videos concurrently with progress tracking.
+        Downloads a batch of videos concurrently.
 
         Args:
-            video_list (list): List of video info dictionaries: [{'url': str, 'title': str, 'folder': str}, ...]
-            format_type (str): 'MP4' or 'MP3'
-            base_path (str): Base directory for downloads
-            quality (str): Quality setting ('highest', 'best', etc.)
+            video_list (list): List of dicts: [{'url': str, 'title': str, 'folder': str}, ...].
+            format_type (str): 'MP4' or 'MP3'.
+            base_path (str): Base directory for downloads.
+            quality (str): Quality setting (e.g., 'highest').
 
         Returns:
-            dict: Results summary: {'successful': int, 'failed': int, 'errors': [str, ...]}
+            dict: Results summary: {'successful': int, 'failed': int, 'errors': [str, ...]}.
         """
         self.total_videos = len(video_list)
         self.completed_videos = 0
@@ -58,12 +63,9 @@ class BatchDownloader:
         if self.log_callback:
             self.log_callback(f"Starting batch download of {self.total_videos} videos in {format_type} format")
 
-        # Create organized folder structure
-        organized_paths = self._create_folder_structure(video_list, base_path, format_type)
+        organized_paths = self.createFolderStructure(video_list, base_path, format_type)
 
-        # Download videos concurrently
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            # Submit all download tasks
             future_to_video = {}
             for video_info in video_list:
                 if self.cancel_event.is_set():
@@ -71,7 +73,7 @@ class BatchDownloader:
 
                 folder_path = organized_paths.get(video_info.get('folder', ''), base_path)
                 future = executor.submit(
-                    self._download_single_video,
+                    self.downloadSingleVideo,
                     video_info,
                     format_type,
                     folder_path,
@@ -79,7 +81,6 @@ class BatchDownloader:
                 )
                 future_to_video[future] = video_info
 
-            # Process completed downloads
             for future in as_completed(future_to_video):
                 if self.cancel_event.is_set():
                     break
@@ -97,17 +98,14 @@ class BatchDownloader:
                             if self.log_callback:
                                 self.log_callback(f"Failed: {video_info['title']} - {error_msg}")
 
-                        # Update overall progress
                         overall_progress = (self.completed_videos / self.total_videos) * 100
                         if self.progress_callback:
                             self.progress_callback(int(overall_progress))
 
-                        # only log progress updates at certain intervals to avoid spam
                         progress_percent = int(overall_progress)
-                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):  # update every 5% or at completion
+                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):
                             self.last_progress_update = progress_percent
                             if self.log_callback:
-                                # create a visual progress bar
                                 bar_length = 20
                                 filled_length = int(bar_length * self.completed_videos // self.total_videos)
                                 bar = '[' + '=' * filled_length + '>' + ' ' * (bar_length - filled_length - 1) + ']'
@@ -121,21 +119,9 @@ class BatchDownloader:
                         if self.log_callback:
                             self.log_callback(f"Error: {video_info['title']} - {str(e)}")
 
-                        # Update overall progress even for errors
                         overall_progress = (self.completed_videos / self.total_videos) * 100
                         if self.progress_callback:
                             self.progress_callback(int(overall_progress))
-
-                        # only log progress updates at certain intervals to avoid spam
-                        progress_percent = int(overall_progress)
-                        if progress_percent > self.last_progress_update and (progress_percent % 5 == 0 or progress_percent == 100):  # update every 5% or at completion
-                            self.last_progress_update = progress_percent
-                            if self.log_callback:
-                                # create a visual progress bar
-                                bar_length = 20
-                                filled_length = int(bar_length * self.completed_videos // self.total_videos)
-                                bar = '[' + '=' * filled_length + '>' + ' ' * (bar_length - filled_length - 1) + ']'
-                                self.log_callback(f"Download progress: {bar} {progress_percent}% ({self.completed_videos}/{self.total_videos} videos)")
 
         if self.cancel_event.is_set():
             if self.log_callback:
@@ -146,54 +132,51 @@ class BatchDownloader:
 
         return results
 
-    def cancel_download(self):
+    def cancelDownload(self):
         """
-        Cancel the current batch download operation.
-
-        Sets the threading event to signal all download threads to stop.
+        Cancels the current batch download operation.
         """
         self.cancel_event.set()
         if self.log_callback:
             self.log_callback("Cancelling batch download...")
 
-    def _download_single_video(self, video_info, format_type, folder_path, quality):
+    def downloadSingleVideo(self, video_info, format_type, folder_path, quality):
         """
-        Download a single video using the appropriate downloader based on format.
+        Downloads a single video using the appropriate converter.
 
         Args:
-            video_info (dict): Video information: {'url': str, 'title': str}
-            format_type (str): 'MP4' or 'MP3'
-            folder_path (str): Path to save the video
-            quality (str): Quality setting
+            video_info (dict): Video information: {'url': str, 'title': str}.
+            format_type (str): 'MP4' or 'MP3'.
+            folder_path (str): Path to save the file.
+            quality (str): Quality setting.
 
         Returns:
-            tuple: (success: bool, error_message: str)
+            tuple: (success: bool, error_message: str).
         """
         try:
-            # Sanitize the video title to ensure it's safe for filenames
-            sanitized_title = sanitize_filename(video_info['title'])
+            sanitized_title = sanitizeFilename(video_info['title'])
             
             if format_type.upper() == 'MP4':
-                downloader = YouTubeDownloader()
-
-                downloader.set_url(video_info['url'])
-                downloader.set_path(folder_path)
-
-                # set resolution based on quality
-                if quality.lower() == 'highest':
-                    # will use the highest available resolution
-                    pass # default behavior
-                else:
-                    # could implement quality parsing here
-                    pass
-
-                downloader.download_video(custom_title=sanitized_title)
+                downloader = Mp4Downloader()
+                downloader.setUrl(video_info['url'])
+                downloader.setPath(folder_path)
+                # Resolution mapping could be improved here
+                # Pass the quality parameter to set the resolution
+                if quality and quality.lower() != "highest":
+                    try:
+                        # Extract numeric value from quality (e.g., "720p" -> 720)
+                        resolution = ''.join(filter(str.isdigit, quality))
+                        if resolution:
+                            downloader.resolution = resolution
+                    except:
+                        pass  # Use default resolution if parsing fails
+                downloader.downloadVideo(custom_title=sanitized_title)
 
             elif format_type.upper() == 'MP3':
-                downloader = MP3Downloader()
-                downloader.set_url(video_info['url'])
-                downloader.set_path(folder_path)
-                downloader.download_as_mp3(custom_title=sanitized_title)
+                downloader = Mp3Downloader()
+                downloader.setUrl(video_info['url'])
+                downloader.setPath(folder_path)
+                downloader.downloadAsMp3(custom_title=sanitized_title)
 
             else:
                 raise ValueError(f"Unsupported format: {format_type}")
@@ -203,45 +186,39 @@ class BatchDownloader:
         except Exception as e:
             return False, str(e)
 
-    def _create_folder_structure(self, video_list, base_path, format_type):
+    def createFolderStructure(self, video_list, base_path, format_type):
         """
-        Create organized folder structure for downloads following the plan:
-        ~/Music (MP3) or ~/Videos (MP4)/ChannelName/PlaylistName/ or Random/
+        Creates the folder structure for organized downloads.
 
         Args:
-            video_list (list): List of video info dictionaries with 'folder' key containing 'ChannelName/PlaylistName' or 'ChannelName/Random'
-            base_path (str): Base directory path
-            format_type (str): 'MP4' or 'MP3'
+            video_list (list): List of video items.
+            base_path (str): Root path.
+            format_type (str): 'MP4' or 'MP3'.
 
         Returns:
-            dict: Mapping of folder identifiers to full paths
+            dict: Map of folder identifiers to absolute paths.
         """
         organized_paths = {}
 
-        # Determine root folder based on format
         if format_type.upper() == 'MP3':
             root_folder = os.path.join(base_path, "Music")
-        else:  # MP4
+        else:
             root_folder = os.path.join(base_path, "Videos")
 
-        # Create unique folder paths for each group of videos
         folder_groups = {}
         for video in video_list:
-            folder_path = video.get('folder', '')
-            if folder_path not in folder_groups:
-                folder_groups[folder_path] = []
-            folder_groups[folder_path].append(video)
+            item_folder = video.get('folder', '')
+            if item_folder not in folder_groups:
+                folder_groups[item_folder] = []
+            folder_groups[item_folder].append(video)
 
-        for folder_path, videos in folder_groups.items():
-            if folder_path:
-                # folder_path should be in format "ChannelName/PlaylistName" or "ChannelName/Random"
-                full_path = os.path.join(root_folder, folder_path)
+        for item_folder, videos_in_group in folder_groups.items():
+            if item_folder:
+                full_path = os.path.join(root_folder, item_folder)
             else:
-                # Fallback for videos without specific folder
                 full_path = root_folder
 
-            # Create directory structure if it doesn't exist
             os.makedirs(full_path, exist_ok=True)
-            organized_paths[folder_path] = full_path
+            organized_paths[item_folder] = full_path
 
         return organized_paths

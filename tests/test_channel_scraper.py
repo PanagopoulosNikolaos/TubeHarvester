@@ -56,13 +56,13 @@ class TestChannelScraper:
 
         # Mock playlist scraper
         mock_playlist_scraper = Mock()
-        mock_playlist_scraper.scrape_playlist.side_effect = [
+        mock_playlist_scraper.scrapePlaylist.side_effect = [
             [{'url': 'https://youtube.com/watch?v=pl1v1', 'title': 'PL1_Video_1', 'duration': 100}],
             [{'url': 'https://youtube.com/watch?v=pl2v1', 'title': 'PL2_Video_1', 'duration': 200}]
         ]
         mock_playlist_scraper_class.return_value = mock_playlist_scraper
 
-        result = self.scraper.scrape_channel(self.test_url)
+        result = self.scraper.scrapeChannel(self.test_url)
 
         expected_result = {
             'channel_name': 'Test Channel',
@@ -89,31 +89,31 @@ class TestChannelScraper:
     def test_normalize_channel_url_channel_format(self):
         """Test URL normalization for already correct channel format."""
         url = "https://www.youtube.com/channel/UC123"
-        result = self.scraper._normalize_channel_url(url)
+        result = self.scraper.normalizeChannelUrl(url)
         assert result == url
 
     def test_normalize_channel_url_user_format(self):
         """Test URL normalization for user format."""
         url = "https://www.youtube.com/user/testuser"
-        result = self.scraper._normalize_channel_url(url)
+        result = self.scraper.normalizeChannelUrl(url)
         assert result == "https://www.youtube.com/user/testuser"
 
     def test_normalize_channel_url_custom_format(self):
         """Test URL normalization for custom channel format."""
         url = "https://www.youtube.com/c/TestChannel"
-        result = self.scraper._normalize_channel_url(url)
+        result = self.scraper.normalizeChannelUrl(url)
         assert result == url
 
     def test_normalize_channel_url_at_format(self):
         """Test URL normalization for @ format."""
         url = "https://www.youtube.com/@TestChannel"
-        result = self.scraper._normalize_channel_url(url)
+        result = self.scraper.normalizeChannelUrl(url)
         assert result == url
 
     def test_normalize_channel_url_unknown_format(self):
         """Test URL normalization for unknown format."""
         url = "https://www.youtube.com/someother/test"
-        result = self.scraper._normalize_channel_url(url)
+        result = self.scraper.normalizeChannelUrl(url)
         assert result == url
 
     @patch('yt_dlp.YoutubeDL')
@@ -125,7 +125,7 @@ class TestChannelScraper:
         mock_ydl.extract_info.return_value = {'channel': 'Test Channel Name'}
         mock_ydl_class.return_value = mock_ydl
 
-        result = self.scraper._get_channel_name(self.test_url)
+        result = self.scraper.getChannelName(self.test_url)
 
         assert result == 'Test Channel Name'
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
@@ -139,7 +139,7 @@ class TestChannelScraper:
         mock_ydl.extract_info.side_effect = Exception("Network error")
         mock_ydl_class.return_value = mock_ydl
 
-        result = self.scraper._get_channel_name(self.test_url)
+        result = self.scraper.getChannelName(self.test_url)
 
         assert result == 'Unknown Channel'
 
@@ -158,7 +158,7 @@ class TestChannelScraper:
         }
         mock_ydl_class.return_value = mock_ydl
 
-        playlists = self.scraper._get_channel_playlists(self.test_url)
+        playlists = self.scraper.getChannelPlaylists(self.test_url)
 
         expected_playlists = [
             {'title': 'Playlist 1', 'url': 'https://youtube.com/playlist?list=PL1'},
@@ -176,7 +176,7 @@ class TestChannelScraper:
         mock_ydl.extract_info.return_value = {'entries': None}
         mock_ydl_class.return_value = mock_ydl
 
-        playlists = self.scraper._get_channel_playlists(self.test_url)
+        playlists = self.scraper.getChannelPlaylists(self.test_url)
 
         assert playlists == []
 
@@ -189,7 +189,7 @@ class TestChannelScraper:
         mock_ydl.extract_info.side_effect = Exception("Network error")
         mock_ydl_class.return_value = mock_ydl
 
-        playlists = self.scraper._get_channel_playlists(self.test_url)
+        playlists = self.scraper.getChannelPlaylists(self.test_url)
 
         assert playlists == []
 
@@ -208,7 +208,7 @@ class TestChannelScraper:
         }
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper._get_standalone_videos(self.test_url, max_videos=5)
+        videos = self.scraper.getStandaloneVideos(self.test_url, max_videos=5)
 
         expected_videos = [
             {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video_1', 'duration': 300},
@@ -234,7 +234,7 @@ class TestChannelScraper:
         }
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper._get_standalone_videos(self.test_url, max_videos=2)
+        videos = self.scraper.getStandaloneVideos(self.test_url, max_videos=2)
 
         # Should only return first 2 videos
         assert len(videos) == 2
@@ -250,7 +250,7 @@ class TestChannelScraper:
         mock_ydl.extract_info.side_effect = Exception("Network error")
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper._get_standalone_videos(self.test_url)
+        videos = self.scraper.getStandaloneVideos(self.test_url)
 
         assert videos == []
 
@@ -276,7 +276,7 @@ class TestChannelScraper:
 
         # Mock playlist scraper failure
         mock_playlist_scraper = Mock()
-        mock_playlist_scraper.scrape_playlist.side_effect = Exception("Playlist scrape failed")
+        mock_playlist_scraper.scrapePlaylist.side_effect = Exception("Playlist scrape failed")
         mock_playlist_scraper_class.return_value = mock_playlist_scraper
 
         # Mock standalone videos (empty)
@@ -286,7 +286,7 @@ class TestChannelScraper:
         mock_ydl_videos.extract_info.return_value = {'entries': None}
         mock_ydl_class.side_effect = [mock_ydl_channel, mock_ydl_playlists, mock_ydl_videos]
 
-        result = self.scraper.scrape_channel(self.test_url)
+        result = self.scraper.scrapeChannel(self.test_url)
 
         # Should still return result with empty playlists and standalone videos
         assert result['channel_name'] == 'Test Channel'
@@ -317,7 +317,7 @@ class TestChannelScraper:
 
         # Mock playlist scraper
         mock_playlist_scraper = Mock()
-        mock_playlist_scraper.scrape_playlist.return_value = []
+        mock_playlist_scraper.scrapePlaylist.return_value = []
         mock_playlist_scraper_class.return_value = mock_playlist_scraper
 
         # Mock standalone videos
@@ -328,7 +328,7 @@ class TestChannelScraper:
         mock_ydl_class.side_effect = [mock_ydl_channel, mock_ydl_playlists, mock_ydl_videos]
 
         scraper = ChannelScraper(timeout=1.5)
-        scraper.scrape_channel(self.test_url)
+        scraper.scrapeChannel(self.test_url)
 
         # Should sleep once between the two playlists
         mock_sleep.assert_called_with(1.5)

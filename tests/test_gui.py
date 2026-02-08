@@ -36,39 +36,43 @@ class TestSingleDownloadPanel:
         """Test browse path functionality."""
         mock_askdirectory.return_value = "/test/path"
 
-        self.panel.browse_path()
+        self.panel.browsePath()
 
         assert self.panel.path_display.get() == "/test/path"
 
     @patch('src.GUI.messagebox')
-    @patch('src.GUI.YouTubeDownloader')
-    def test_fetch_resolutions_no_formats(self, mock_downloader_class, mock_messagebox):
+    @patch('yt_dlp.YoutubeDL')
+    def test_fetch_resolutions_no_formats(self, mock_ydl_class, mock_messagebox):
         """Test fetching resolutions when no video formats found."""
-        mock_downloader = Mock()
-        mock_downloader_class.return_value = mock_downloader
-        mock_downloader.fetch_video_info.return_value = {'formats': []}
+        mock_ydl = Mock()
+        mock_ydl.__enter__ = Mock(return_value=mock_ydl)
+        mock_ydl.__exit__ = Mock(return_value=None)
+        mock_ydl.extract_info.return_value = {'formats': []}
+        mock_ydl_class.return_value = mock_ydl
 
         # Set the last checked URL so the method will execute
         self.panel.last_checked_url = "https://youtube.com/watch?v=test"
-        self.panel.fetch_resolutions()
+        self.panel.fetchResolutions()
 
         mock_messagebox.showinfo.assert_called_with("Info", "No video resolutions found.")
 
     @patch('src.GUI.messagebox')
-    @patch('src.GUI.YouTubeDownloader')
-    def test_fetch_resolutions_error(self, mock_downloader_class, mock_messagebox):
+    @patch('yt_dlp.YoutubeDL')
+    def test_fetch_resolutions_error(self, mock_ydl_class, mock_messagebox):
         """Test fetching resolutions with error."""
-        mock_downloader = Mock()
-        mock_downloader_class.return_value = mock_downloader
-        mock_downloader.fetch_video_info.side_effect = Exception("Network error")
+        mock_ydl = Mock()
+        mock_ydl.__enter__ = Mock(return_value=mock_ydl)
+        mock_ydl.__exit__ = Mock(return_value=None)
+        mock_ydl.extract_info.side_effect = Exception("Network error")
+        mock_ydl_class.return_value = mock_ydl
 
         # Set the last checked URL so the method will execute
         self.panel.last_checked_url = "https://youtube.com/watch?v=test"
-        self.panel.fetch_resolutions()
+        self.panel.fetchResolutions()
 
         mock_messagebox.showerror.assert_called_with("Error", "Failed to fetch resolutions: Network error")
 
-    @patch('src.GUI.YouTubeDownloader')
+    @patch('src.GUI.Mp4Downloader')
     @patch('threading.Thread')
     def test_start_download_mp4(self, mock_thread_class, mock_downloader_class):
         """Test starting MP4 download."""
@@ -83,17 +87,17 @@ class TestSingleDownloadPanel:
         self.panel.path_display.insert(0, "/test/path")
         self.panel.resolution_var.set("720")
 
-        self.panel.start_download()
+        self.panel.startDownload()
 
         # Verify downloader was configured correctly
-        mock_downloader.set_url.assert_called_with("https://youtube.com/watch?v=test")
-        mock_downloader.set_path.assert_called_with("/test/path")
+        mock_downloader.setUrl.assert_called_with("https://youtube.com/watch?v=test")
+        mock_downloader.setPath.assert_called_with("/test/path")
         assert mock_downloader.resolution == 720
 
         # Verify thread was started
         mock_thread.start.assert_called_once()
 
-    @patch('src.GUI.MP3Downloader')
+    @patch('src.GUI.Mp3Downloader')
     @patch('threading.Thread')
     def test_start_download_mp3(self, mock_thread_class, mock_mp3_downloader_class):
         """Test starting MP3 download."""
@@ -108,10 +112,10 @@ class TestSingleDownloadPanel:
         self.panel.path_display.insert(0, "/test/path")
         self.panel.format_var.set("MP3")
 
-        self.panel.start_download()
+        self.panel.startDownload()
 
         # Verify MP3 downloader was created with correct parameters
-        mock_mp3_downloader_class.assert_called_with("https://youtube.com/watch?v=test", "/test/path", self.panel.update_progress, self.panel.log_message)
+        mock_mp3_downloader_class.assert_called_with("https://youtube.com/watch?v=test", "/test/path", self.panel.updateProgress, self.panel.logMessage)
 
         # Verify thread was started
         mock_thread.start.assert_called_once()
@@ -123,27 +127,27 @@ class TestSingleDownloadPanel:
         self.panel.format_var.set("MP4")
         self.panel.resolution_var.set("")  # No resolution set
 
-        self.panel.start_download()
+        self.panel.startDownload()
 
         mock_messagebox.assert_called_with("Error", "Please fetch and select a resolution.")
 
     def test_update_progress(self):
         """Test progress update."""
         self.panel.progress['value'] = 0
-        self.panel.update_progress(50)
+        self.panel.updateProgress(50)
 
         assert self.panel.progress['value'] == 50
 
     def test_clear_progress_bar(self):
         """Test clearing progress bar."""
         self.panel.progress['value'] = 50
-        self.panel.clear_progress_bar()
+        self.panel.clearProgressBar()
 
         assert self.panel.progress['value'] == 0
 
     def test_log_message(self):
         """Test logging message."""
-        self.panel.log_message("Test message")
+        self.panel.logMessage("Test message")
 
         # Check that message was inserted (text widget should contain the message)
         content = self.panel.message_screen.get("1.0", tk.END).strip()
@@ -152,7 +156,7 @@ class TestSingleDownloadPanel:
     def test_update_format_color_mp4(self):
         """Test format color update for MP4."""
         self.panel.format_var.set("MP4")
-        self.panel.update_format_color()
+        self.panel.updateFormatColor()
 
         # Resolution menu should be enabled for MP4
         assert str(self.panel.resolution_menu['state']) == 'normal'
@@ -160,7 +164,7 @@ class TestSingleDownloadPanel:
     def test_update_format_color_mp3(self):
         """Test format color update for MP3."""
         self.panel.format_var.set("MP3")
-        self.panel.update_format_color()
+        self.panel.updateFormatColor()
 
         # Resolution menu should be disabled for MP3
         assert str(self.panel.resolution_menu['state']) == 'disabled'
@@ -196,27 +200,27 @@ class TestBatchDownloadPanel:
         """Test browse path functionality."""
         mock_askdirectory.return_value = "/test/path"
 
-        self.panel.browse_path()
+        self.panel.browsePath()
 
         assert self.panel.path_display.get() == "/test/path"
 
     def test_update_max_videos_display_playlist(self):
         """Test max videos display update for playlist mode."""
         self.panel.mode_var.set("Playlist Download")
-        self.panel.update_max_videos_display()
+        self.panel.updateMaxVideosDisplay()
 
         assert self.panel.max_videos_var.get() == "200"
 
     def test_update_max_videos_display_profile(self):
         """Test max videos display update for profile scrape mode."""
         self.panel.mode_var.set("Profile Scrape")
-        self.panel.update_max_videos_display()
+        self.panel.updateMaxVideosDisplay()
 
         assert self.panel.max_videos_var.get() == "ALL"
 
     def test_start_batch_download_no_url(self):
         """Test starting batch download without URL."""
-        self.panel.start_batch_download()
+        self.panel.startBatchDownload()
 
         # Check that the error message was logged
         content = self.panel.message_screen.get("1.0", tk.END).strip()
@@ -233,15 +237,15 @@ class TestBatchDownloadPanel:
         mock_scraper_class.return_value = mock_scraper
         mock_playlist_scraper_class.return_value = mock_scraper_class
 
-        mock_scraper.scrape_playlist.return_value = [
+        mock_scraper.scrapePlaylist.return_value = [
             {'url': 'https://youtube.com/watch?v=1', 'title': 'Video 1', 'duration': 300}
         ]
-        mock_scraper.get_playlist_title.return_value = "Test Playlist"
+        mock_scraper.getPlaylistTitle.return_value = "Test Playlist"
 
         # Mock batch downloader
         mock_batch_downloader = Mock()
         mock_batch_downloader_class.return_value = mock_batch_downloader
-        mock_batch_downloader.download_batch.return_value = {
+        mock_batch_downloader.downloadBatch.return_value = {
             'successful': 1, 'failed': 0, 'errors': []
         }
 
@@ -254,7 +258,7 @@ class TestBatchDownloadPanel:
         self.panel.path_display.insert(0, "/test/path")
         self.panel.mode_var.set("Playlist Download")
 
-        self.panel.start_batch_download()
+        self.panel.startBatchDownload()
 
         # Verify thread was started
         mock_thread.start.assert_called_once()
@@ -274,7 +278,7 @@ class TestBatchDownloadPanel:
         mock_scraper_class.return_value = mock_scraper
         mock_channel_scraper_class.return_value = mock_scraper_class
 
-        mock_scraper.scrape_channel.return_value = {
+        mock_scraper.scrapeChannel.return_value = {
             'channel_name': 'Test Channel',
             'playlists': [],
             'standalone_videos': [
@@ -285,7 +289,7 @@ class TestBatchDownloadPanel:
         # Mock batch downloader
         mock_batch_downloader = Mock()
         mock_batch_downloader_class.return_value = mock_batch_downloader
-        mock_batch_downloader.download_batch.return_value = {
+        mock_batch_downloader.downloadBatch.return_value = {
             'successful': 1, 'failed': 0, 'errors': []
         }
 
@@ -298,7 +302,7 @@ class TestBatchDownloadPanel:
         self.panel.path_display.insert(0, "/test/path")
         self.panel.mode_var.set("Profile Scrape")
 
-        self.panel.start_batch_download()
+        self.panel.startBatchDownload()
 
         # Verify thread was started
         mock_thread.start.assert_called_once()
@@ -309,10 +313,10 @@ class TestBatchDownloadPanel:
         mock_batch_downloader = Mock()
         self.panel.batch_downloader = mock_batch_downloader
 
-        self.panel.cancel_download()
+        self.panel.cancelDownload()
 
         # Verify cancel was called
-        mock_batch_downloader.cancel_download.assert_called_once()
+        mock_batch_downloader.cancelDownload.assert_called_once()
 
         # Verify buttons were updated
         assert str(self.panel.cancel_button['state']) == 'disabled'
@@ -323,11 +327,11 @@ class TestBatchDownloadPanel:
         self.panel.batch_downloader = None
 
         # Should not raise an exception
-        self.panel.cancel_download()
+        self.panel.cancelDownload()
 
     def test_log_message(self):
         """Test logging message."""
-        self.panel.log_message("Test message")
+        self.panel.logMessage("Test message")
 
         # Check that message was inserted
         content = self.panel.message_screen.get("1.0", tk.END).strip()
@@ -375,8 +379,8 @@ class TestYouTubeDownloaderGUI:
         mock_root = Mock()
         mock_tk_class.return_value = mock_root
 
-        # Import and call run_gui (this would normally start the event loop)
-        from src.GUI import run_gui
+        # Import and call runGui (this would normally start the event loop)
+        from src.GUI import runGui
 
         # We can't actually run the GUI in tests, but we can verify it creates a Tk instance
         # and calls mainloop on it
@@ -386,7 +390,7 @@ class TestYouTubeDownloaderGUI:
 
             # This would normally block, but we'll mock it
             with patch.object(mock_root, 'mainloop') as mock_mainloop:
-                run_gui()
+                runGui()
 
             mock_tk_class.assert_called_once()
             mock_gui_class.assert_called_once_with(mock_root)

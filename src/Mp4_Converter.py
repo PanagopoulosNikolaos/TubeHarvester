@@ -2,178 +2,181 @@ import os
 import yt_dlp
 import logging
 from .CookieManager import CookieManager
-from .utils import sanitize_filename
+from .utils import sanitizeFilename
 
-class YouTubeDownloader:
+class Mp4Downloader:
+    """
+    Handles the downloading of YouTube videos as MP4 files.
+
+    This class provides methods to select resolutions, set download paths,
+    and manage the download process using yt-dlp.
+    """
+
     def __init__(self, progress_callback=None, log_callback=None):
         """
-        Initialize the YouTubeDownloader with progress and log callbacks.
+        Initializes the Mp4Downloader with callback functions.
 
         Args:
-            progress_callback (callable): A function that takes a single argument, an integer representing the download progress percentage,
-                                         that will be called every time the download progress changes. If None, no callback is used.
-            log_callback (callable): A function that will be called with log messages. If None, no log messages will be displayed.
+            progress_callback (callable, optional): Called with the percentage of download progress.
+            log_callback (callable, optional): Called with log messages.
         """
         self.url = None
-        self.path = self.get_default_download_path()
+        self.path = self.getDefaultDownloadPath()
         self.progress_callback = progress_callback
         self.log_callback = log_callback
         self.video_title = None
-        self.resolution = None
+        self.resolution = "1080"  # Default target
         self.cookie_manager = CookieManager(log_callback=self.log_callback)
 
     @staticmethod
-    def get_default_download_path():
+    def getDefaultDownloadPath():
         """
-        Get the default path where downloaded videos will be saved.
+        Gets the default path where downloaded files are saved.
 
         Returns:
-            str: The default path where downloaded videos will be saved. The default path is set to the user's home directory, in a folder named 'Downloads'.
+            str: The user's Downloads directory.
         """
-        home_directory = os.path.expanduser('~')
-        return os.path.join(home_directory, 'Downloads')
+        return os.path.join(os.path.expanduser('~'), 'Downloads')
 
-    def set_url(self, url):
+    def setUrl(self, url):
         """
-        Set the URL of the YouTube video to download.
+        Sets the URL of the YouTube video to download.
 
         Args:
-            url (str): The URL of the YouTube video to download.
+            url (str): The URL of the YouTube video.
         """
-        
         self.url = url
 
-    def set_path(self, path):
+    def setPath(self, path):
         """
-        Set the path where the downloaded video will be saved.
+        Sets the path where the downloaded MP4 file will be saved.
 
         Args:
-            path (str): The path where the downloaded video will be saved. If None, the default path (user's home directory, in a
-                       folder named 'Downloads') is used.
+            path (str, optional): The destination directory.
         """
-        self.path = path if path else self.get_default_download_path()
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
+        self.path = path or self.getDefaultDownloadPath()
+        os.makedirs(self.path, exist_ok=True)
 
-    def download_video(self, custom_title=None):
-        if not self.url:
-            raise ValueError("URL is not set. Use set_url() method to set the URL before downloading.")
-
-        try:
-            info = self._get_video_info()
-            self.video_title = sanitize_filename(custom_title or info.get('title', 'Unknown Title'))
-            self.resolution = info.get('height', 'Unknown Resolution')
-
-            if self.log_callback:
-                self.log_callback(f"Download started: \"{self.video_title}\" - Resolution: {self.resolution}p. Saved at: \"{self.path}\"")
-
-            # download audio stream separately for better quality control
-            self._download_stream('bestaudio', 'audio_temp', 0, 50)
-
-            # download video stream separately for better quality control
-            self._download_stream(f'bestvideo[height<={self.resolution}]', 'video_temp', 50, 100)
-
-            self._merge_files()
-
-            if self.log_callback:
-                self.log_callback(f"Download complete at {self.path}")
-
-        except yt_dlp.DownloadError as e:
-            if "Private video" in str(e) or "This video is unavailable" in str(e) or "Copyright" in str(e) or "Sign in to confirm your age" in str(e):
-                if self.log_callback:
-                    self.log_callback(f"Cannot download private or restricted video: {self.video_title or 'Unknown Title'}")
-                logging.info(f"Private or restricted video skipped: {self.url}")
-            else:
-                logging.error(f"An error occurred: {e}")
-                if self.log_callback:
-                    self.log_callback(f"An error occurred: {e}")
-        except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            if self.log_callback:
-                self.log_callback(f"An error occurred: {e}")
-
-    def fetch_video_info(self):
+    def downloadVideo(self, custom_title=None):
         """
-        Fetch video information without downloading.
+        Downloads the video from YouTube in MP4 format.
 
-        This method is intended to be called from the GUI to populate resolution choices.
+        Args:
+            custom_title (str, optional): Custom title for the file. Defaults to video title.
+
+        Raises:
+            ValueError: If the URL is not set.
         """
         if not self.url:
             raise ValueError("URL is not set.")
 
-        cookie_file = self.cookie_manager.get_cookie_file()
         ydl_opts = {
+            'format': f'bestvideo[height<={self.resolution}]+bestaudio/best[height<={self.resolution}]/best',
+            'outtmpl': os.path.join(self.path, f"{custom_title or '%(title)s'}.%(ext)s"),
+            'progress_hooks': [self.progressHook],
             'noplaylist': True,
+            'merge_output_format': 'mp4',
+            'extractor_args': {
+                'youtube': {
+                    'hl': 'en-US',
+                    'gl': 'US',
+                    'skip': ['translated_subs'],
+                }
+            },
+            'postprocessors': [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }, {
+                'key': 'FFmpegMerger',
+            }],
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': '*/*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-origin',
+                'X-Client-Version': '2.20240523.01.00',
+                'X-Youtube-Client-Name': '1',
+                'Origin': 'https://www.youtube.com',
+                'Referer': 'https://www.youtube.com/',
+            },
+            'quiet': False,
+            'no_warnings': False,
+            'age_limit': 99,
+            'check_formats': 'selected',
+            'youtube_include_dash_manifest': True,
+            'youtube_include_hls_manifest': True,
+            'javascript_executor': '/home/ice/.deno/bin/deno',
         }
-
-        if cookie_file:
-            ydl_opts['cookies'] = cookie_file
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            return ydl.extract_info(self.url, download=False)
-
-    def _get_video_info(self):
-        return self.fetch_video_info()
-
-    def _download_stream(self, format_selection, temp_filename, start_progress, end_progress):
-        cookie_file = self.cookie_manager.get_cookie_file()
-        options = {
-            'format': format_selection,
-            'outtmpl': os.path.join(self.path, f'{temp_filename}.%(ext)s'),
-            'progress_hooks': [lambda d: self._progress_hook(d, start_progress, end_progress)],
-            'noplaylist': True,
-        }
-
-        if cookie_file:
-            options['cookies'] = cookie_file
-
-        with yt_dlp.YoutubeDL(options) as ydl:
-            ydl.download([self.url])
-
-    def _merge_files(self):
-        if self.log_callback:
-            self.log_callback("Merging audio and video...")
-
-        # find temporary files for merging
-        temp_files = [f for f in os.listdir(self.path) if f.startswith('video_temp') or f.startswith('audio_temp')]
-        video_file = next((f for f in temp_files if f.startswith('video_temp')), None)
-        audio_file = next((f for f in temp_files if f.startswith('audio_temp')), None)
-
-        if not video_file or not audio_file:
-            if self.log_callback:
-                self.log_callback("Error: Could not find temporary audio/video files to merge.")
-            return
-
-        video_path = os.path.join(self.path, video_file)
-        audio_path = os.path.join(self.path, audio_file)
-        output_path = os.path.join(self.path, f"{self.video_title}.mp4")
-
-        # use ffmpeg to merge audio and video streams
-        command = f"ffmpeg -i \"{video_path}\" -i \"{audio_path}\" -c:v copy -c:a aac \"{output_path}\""
 
         try:
-            os.system(command)
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(self.url, download=True)
+                self.video_title = sanitizeFilename(info.get('title', 'Unknown'))
+                
             if self.log_callback:
-                self.log_callback("Files merged successfully.")
+                self.log_callback(f"Download complete: {self.video_title}")
+
         except Exception as e:
-            if self.log_callback:
-                self.log_callback(f"Error during merge: {e}")
-        finally:
-            # clean up temporary files after merging
-            os.remove(video_path)
-            os.remove(audio_path)
+            self.handleError(e)
 
-    def _progress_hook(self, d, start_progress, end_progress):
-        if d['status'] == 'downloading':
-            total_bytes = d.get('total_bytes') or d.get('total_bytes_estimate', 0)
-            downloaded_bytes = d.get('downloaded_bytes', 0)
+    def fetchVideoInfo(self):
+        """
+        Fetches information about the video without downloading.
 
-            if total_bytes > 0:
-                percentage = (downloaded_bytes / total_bytes) * 100
-                scaled_progress = start_progress + (percentage / 100) * (end_progress - start_progress)
+        Returns:
+            dict: The information extracted by yt-dlp.
+        """
+        if not self.url:
+            raise ValueError("URL is not set")
 
-                if self.progress_callback:
-                    self.progress_callback(int(scaled_progress))
-        elif d['status'] == 'finished':
-            if self.progress_callback:
-                self.progress_callback(end_progress)
+        opts = {
+            'noplaylist': True, 
+            'cookiefile': self.cookie_manager.getCookieFile(),
+            'javascript_executor': '/home/ice/.deno/bin/deno',
+            'quiet': True,
+            'no_warnings': True,
+            'extractor_args': {
+                'youtube': {
+                    'hl': 'en-US',
+                    'gl': 'US',
+                }
+            },
+            'youtube_include_dash_manifest': True,
+            'youtube_include_hls_manifest': True,
+        }
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            return ydl.extract_info(self.url, download=False)
+
+    def progressHook(self, d):
+        """
+        Updates the progress via the provided callback.
+
+        Args:
+            d (dict): Dictionary with download progress information.
+        """
+        if d['status'] == 'downloading' and self.progress_callback:
+            p = d.get('_percent_str', '0%').replace('%','')
+            try:
+                self.progress_callback(int(float(p)))
+            except ValueError:
+                pass
+
+    def handleError(self, e):
+        """
+        Handles errors that occur during the download process.
+
+        Args:
+            e (Exception): The exception to handle.
+        """
+        err_msg = str(e)
+        if any(x in err_msg for x in ["Private", "unavailable", "Sign in"]):
+            msg = "Video restricted or requires authentication."
+        else:
+            msg = f"Error: {err_msg}"
+        
+        logging.error(msg)
+        if self.log_callback:
+            self.log_callback(msg)

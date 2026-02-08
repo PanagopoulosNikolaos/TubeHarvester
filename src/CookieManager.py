@@ -1,4 +1,3 @@
-
 import subprocess
 import shutil
 from pathlib import Path
@@ -7,6 +6,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 class CookieManager:
+    """
+    Manages the extraction and retrieval of YouTube cookies from local browsers.
+
+    This class attempts to find installed browsers and use yt-dlp's built-in
+    cookie extraction to create a cookie file for authenticated requests.
+    """
+
     COOKIE_FILE = "yt_cookies.txt"
     BROWSERS = [
         ("brave-browser", "brave"),
@@ -19,19 +25,19 @@ class CookieManager:
 
     def __init__(self, log_callback=None):
         """
-        Initialize the CookieManager with an optional log callback.
+        Initializes the CookieManager.
 
         Args:
-            log_callback (callable): Function to call with log messages
+            log_callback (callable, optional): Called with log messages.
         """
         self.log_callback = log_callback
 
-    def get_cookie_file(self):
+    def getCookieFile(self):
         """
-        Get the path to the cookie file, creating it if it doesn't exist.
+        Gets the path to the cookie file, extracting if necessary.
 
         Returns:
-            str or None: Path to the cookie file if it exists or can be created, None otherwise
+            str: Path to the cookie file or None if extraction fails.
         """
         cookie_path = Path(self.COOKIE_FILE)
         if cookie_path.exists():
@@ -40,58 +46,55 @@ class CookieManager:
             return str(cookie_path)
         
         if self.log_callback:
-            self.log_callback("Cookie file not found. Attempting to extract cookies from browsers.")
-        if self.extract_cookies():
+            self.log_callback("Cookie file not found. Attempting extraction from browsers.")
+        
+        if self.extractCookies():
             return str(cookie_path)
         
         return None
 
-    def extract_cookies(self):
+    def extractCookies(self):
         """
-        Extract YouTube cookies from installed browsers.
+        Extracts YouTube cookies from installed browsers using yt-dlp.
 
         Returns:
-            bool: True if cookies were successfully extracted, False otherwise
+            bool: True if extraction was successful, False otherwise.
         """
         if self.log_callback:
             self.log_callback("Attempting to extract YouTube cookies...")
 
         for binary, name in self.BROWSERS:
             if not shutil.which(binary):
-                if self.log_callback:
-                    self.log_callback(f"Browser '{name}' not found. Skipping.")
                 continue
 
             if self.log_callback:
                 self.log_callback(f"Found {name}, attempting extraction...")
 
             try:
-                # no URL specification, yt-dlp will extract all cookies
+                # Use --user-agent for consistency with downloader options
                 result = subprocess.run(
-                    ["yt-dlp", "--cookies-from-browser", name, "--cookies", self.COOKIE_FILE],
+                    [
+                        "yt-dlp",
+                        "--cookies-from-browser", name,
+                        "--cookies", self.COOKIE_FILE,
+                        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    ],
                     capture_output=True,
                     timeout=15,
                     text=True
                 )
 
                 if result.returncode == 0 and Path(self.COOKIE_FILE).exists():
-                    # check if the cookie file is not empty
                     if Path(self.COOKIE_FILE).stat().st_size > 0:
                         if self.log_callback:
-                            self.log_callback(f"Successfully extracted cookies from {name} to {self.COOKIE_FILE}")
+                            self.log_callback(f"Successfully extracted cookies from {name}")
                         return True
                     else:
-                        if self.log_callback:
-                            self.log_callback(f"Extracted an empty cookie file from {name}. Trying next browser.")
-                        Path(self.COOKIE_FILE).unlink() # remove empty file to avoid using it
-                else:
-                    if self.log_callback:
-                        error_message = result.stderr.strip() if result.stderr else "Unknown error"
-                        self.log_callback(f"Failed to extract from {name}: {error_message}")
+                        Path(self.COOKIE_FILE).unlink()
 
-            except (subprocess.TimeoutExpired, Exception) as e:
+            except Exception as e:
                 if self.log_callback:
-                    self.log_callback(f"Error with {name}: {type(e).__name__}")
+                    self.log_callback(f"Error extracting from {name}: {type(e).__name__}")
 
         if self.log_callback:
             self.log_callback("Failed to extract cookies from any browser.")

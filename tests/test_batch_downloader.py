@@ -47,7 +47,7 @@ class TestBatchDownloader:
         assert downloader.progress_callback == progress_callback
         assert downloader.log_callback == log_callback
 
-    @patch('src.BatchDownloader.YouTubeDownloader')
+    @patch('src.BatchDownloader.Mp4Downloader')
     def test_download_batch_mp4_success(self, mock_mp4_downloader_class):
         """Test successful MP4 batch download."""
         # Mock MP4 downloader
@@ -55,9 +55,9 @@ class TestBatchDownloader:
         mock_mp4_downloader_class.return_value = mock_mp4_downloader
 
         # Mock download methods
-        mock_mp4_downloader.set_url = Mock()
-        mock_mp4_downloader.set_path = Mock()
-        mock_mp4_downloader.download_video = Mock()
+        mock_mp4_downloader.setUrl = Mock()
+        mock_mp4_downloader.setPath = Mock()
+        mock_mp4_downloader.downloadVideo = Mock()
 
         video_list = [
             {'url': 'https://youtube.com/watch?v=1', 'title': 'Video 1', 'folder': 'TestChannel/Playlist1'},
@@ -68,7 +68,7 @@ class TestBatchDownloader:
         progress_callback = Mock()
 
         downloader = BatchDownloader(max_workers=1, progress_callback=progress_callback, log_callback=log_callback)
-        result = downloader.download_batch(video_list, 'MP4', self.test_base_path, 'highest')
+        result = downloader.downloadBatch(video_list, 'MP4', self.test_base_path, 'highest')
 
         # Verify results
         assert result['successful'] == 2
@@ -77,15 +77,15 @@ class TestBatchDownloader:
 
         # Verify MP4 downloader was called correctly
         assert mock_mp4_downloader_class.call_count == 2
-        assert mock_mp4_downloader.set_url.call_count == 2
-        assert mock_mp4_downloader.set_path.call_count == 2
-        assert mock_mp4_downloader.download_video.call_count == 2
+        assert mock_mp4_downloader.setUrl.call_count == 2
+        assert mock_mp4_downloader.setPath.call_count == 2
+        assert mock_mp4_downloader.downloadVideo.call_count == 2
 
         # Verify callbacks were called
         assert log_callback.call_count >= 3  # Start, 2 completed, finished
         assert progress_callback.call_count >= 2  # Progress updates
 
-    @patch('src.BatchDownloader.MP3Downloader')
+    @patch('src.BatchDownloader.Mp3Downloader')
     def test_download_batch_mp3_success(self, mock_mp3_downloader_class):
         """Test successful MP3 batch download."""
         # Mock MP3 downloader
@@ -93,9 +93,9 @@ class TestBatchDownloader:
         mock_mp3_downloader_class.return_value = mock_mp3_downloader
 
         # Mock download methods
-        mock_mp3_downloader.set_url = Mock()
-        mock_mp3_downloader.set_path = Mock()
-        mock_mp3_downloader.download_as_mp3 = Mock()
+        mock_mp3_downloader.setUrl = Mock()
+        mock_mp3_downloader.setPath = Mock()
+        mock_mp3_downloader.downloadAsMp3 = Mock()
 
         video_list = [
             {'url': 'https://youtube.com/watch?v=1', 'title': 'Video 1', 'folder': 'TestChannel/Random'},
@@ -106,7 +106,7 @@ class TestBatchDownloader:
         progress_callback = Mock()
 
         downloader = BatchDownloader(max_workers=1, progress_callback=progress_callback, log_callback=log_callback)
-        result = downloader.download_batch(video_list, 'MP3', self.test_base_path, 'highest')
+        result = downloader.downloadBatch(video_list, 'MP3', self.test_base_path, 'highest')
 
         # Verify results
         assert result['successful'] == 2
@@ -115,16 +115,16 @@ class TestBatchDownloader:
 
         # Verify MP3 downloader was called correctly
         assert mock_mp3_downloader_class.call_count == 2
-        assert mock_mp3_downloader.set_url.call_count == 2
-        assert mock_mp3_downloader.set_path.call_count == 2
-        assert mock_mp3_downloader.download_as_mp3.call_count == 2
+        assert mock_mp3_downloader.setUrl.call_count == 2
+        assert mock_mp3_downloader.setPath.call_count == 2
+        assert mock_mp3_downloader.downloadAsMp3.call_count == 2
 
     def test_download_batch_empty_list(self):
         """Test batch download with empty video list."""
         log_callback = Mock()
         downloader = BatchDownloader(log_callback=log_callback)
 
-        result = downloader.download_batch([], 'MP4', self.test_base_path, 'highest')
+        result = downloader.downloadBatch([], 'MP4', self.test_base_path, 'highest')
 
         assert result['successful'] == 0
         assert result['failed'] == 0
@@ -141,35 +141,35 @@ class TestBatchDownloader:
 
         downloader = BatchDownloader()
 
-        with patch('src.BatchDownloader.YouTubeDownloader') as mock_mp4, \
-             patch('src.BatchDownloader.MP3Downloader') as mock_mp3:
+        with patch('src.BatchDownloader.Mp4Downloader') as mock_mp4, \
+             patch('src.BatchDownloader.Mp3Downloader') as mock_mp3:
 
             mock_mp4_downloader = Mock()
             mock_mp4.return_value = mock_mp4_downloader
-            mock_mp4_downloader.set_url = Mock()
-            mock_mp4_downloader.set_path = Mock()
-            mock_mp4_downloader.download_video = Mock(side_effect=ValueError("Unsupported format: AVI"))
+            mock_mp4_downloader.setUrl = Mock()
+            mock_mp4_downloader.setPath = Mock()
+            mock_mp4_downloader.downloadVideo = Mock(side_effect=ValueError("Unsupported format: AVI"))
 
-            result = downloader.download_batch(video_list, 'AVI', self.test_base_path, 'highest')
+            result = downloader.downloadBatch(video_list, 'AVI', self.test_base_path, 'highest')
 
             assert result['successful'] == 0
             assert result['failed'] == 1
             assert len(result['errors']) == 1
             assert "Unsupported format: AVI" in result['errors'][0]
 
-    @patch('src.BatchDownloader.YouTubeDownloader')
+    @patch('src.BatchDownloader.Mp4Downloader')
     def test_download_batch_partial_failure(self, mock_mp4_downloader_class):
         """Test batch download with some failures."""
         # Mock downloaders - first succeeds, second fails
         mock_downloader1 = Mock()
-        mock_downloader1.set_url = Mock()
-        mock_downloader1.set_path = Mock()
-        mock_downloader1.download_video = Mock()
+        mock_downloader1.setUrl = Mock()
+        mock_downloader1.setPath = Mock()
+        mock_downloader1.downloadVideo = Mock()
 
         mock_downloader2 = Mock()
-        mock_downloader2.set_url = Mock()
-        mock_downloader2.set_path = Mock()
-        mock_downloader2.download_video = Mock(side_effect=Exception("Download failed"))
+        mock_downloader2.setUrl = Mock()
+        mock_downloader2.setPath = Mock()
+        mock_downloader2.downloadVideo = Mock(side_effect=Exception("Download failed"))
 
         mock_mp4_downloader_class.side_effect = [mock_downloader1, mock_downloader2]
 
@@ -182,7 +182,7 @@ class TestBatchDownloader:
         progress_callback = Mock()
 
         downloader = BatchDownloader(max_workers=1, progress_callback=progress_callback, log_callback=log_callback)
-        result = downloader.download_batch(video_list, 'MP4', self.test_base_path, 'highest')
+        result = downloader.downloadBatch(video_list, 'MP4', self.test_base_path, 'highest')
 
         assert result['successful'] == 1
         assert result['failed'] == 1
@@ -193,7 +193,7 @@ class TestBatchDownloader:
         log_callback = Mock()
         downloader = BatchDownloader(log_callback=log_callback)
 
-        downloader.cancel_download()
+        downloader.cancelDownload()
 
         assert downloader.cancel_event.is_set()
         log_callback.assert_called_with("Cancelling batch download...")
@@ -206,7 +206,7 @@ class TestBatchDownloader:
             {'url': 'https://youtube.com/watch?v=3', 'title': 'Video 3', 'folder': ''}  # No folder
         ]
 
-        organized_paths = self.downloader._create_folder_structure(video_list, self.test_base_path, 'MP3')
+        organized_paths = self.downloader.createFolderStructure(video_list, self.test_base_path, 'MP3')
 
         expected_music_path = os.path.join(self.test_base_path, 'Music')
         expected_playlist_path = os.path.join(expected_music_path, 'Channel1', 'Playlist1')
@@ -227,7 +227,7 @@ class TestBatchDownloader:
             {'url': 'https://youtube.com/watch?v=1', 'title': 'Video 1', 'folder': 'Channel1/Playlist1'}
         ]
 
-        organized_paths = self.downloader._create_folder_structure(video_list, self.test_base_path, 'MP4')
+        organized_paths = self.downloader.createFolderStructure(video_list, self.test_base_path, 'MP4')
 
         expected_videos_path = os.path.join(self.test_base_path, 'Videos')
         expected_playlist_path = os.path.join(expected_videos_path, 'Channel1', 'Playlist1')
@@ -264,14 +264,14 @@ class TestBatchDownloader:
         log_callback = Mock()
         downloader = BatchDownloader(max_workers=1, log_callback=log_callback)
 
-        with patch.object(downloader, '_download_single_video') as mock_download:
+        with patch.object(downloader, 'downloadSingleVideo') as mock_download:
             mock_download.return_value = (True, "")
-            result = downloader.download_batch(video_list, 'MP4', self.test_base_path, 'highest')
+            result = downloader.downloadBatch(video_list, 'MP4', self.test_base_path, 'highest')
 
         # Should have cancelled after first video
         log_callback.assert_called_with("Batch download cancelled")
 
-    @patch('src.BatchDownloader.YouTubeDownloader')
+    @patch('src.BatchDownloader.Mp4Downloader')
     def test_download_single_video_mp4(self, mock_mp4_downloader_class):
         """Test single MP4 video download."""
         mock_mp4_downloader = Mock()
@@ -280,17 +280,17 @@ class TestBatchDownloader:
         video_info = {'url': 'https://youtube.com/watch?v=1', 'title': 'Test Video'}
         folder_path = os.path.join(self.test_base_path, 'test')
 
-        success, error = self.downloader._download_single_video(video_info, 'MP4', folder_path, 'highest')
+        success, error = self.downloader.downloadSingleVideo(video_info, 'MP4', folder_path, 'highest')
 
         assert success is True
         assert error == ""
 
         # Verify downloader was configured correctly
-        mock_mp4_downloader.set_url.assert_called_with('https://youtube.com/watch?v=1')
-        mock_mp4_downloader.set_path.assert_called_with(folder_path)
-        mock_mp4_downloader.download_video.assert_called_once()
+        mock_mp4_downloader.setUrl.assert_called_with('https://youtube.com/watch?v=1')
+        mock_mp4_downloader.setPath.assert_called_with(folder_path)
+        mock_mp4_downloader.downloadVideo.assert_called_once()
 
-    @patch('src.BatchDownloader.MP3Downloader')
+    @patch('src.BatchDownloader.Mp3Downloader')
     def test_download_single_video_mp3(self, mock_mp3_downloader_class):
         """Test single MP3 video download."""
         mock_mp3_downloader = Mock()
@@ -299,37 +299,37 @@ class TestBatchDownloader:
         video_info = {'url': 'https://youtube.com/watch?v=1', 'title': 'Test Video'}
         folder_path = os.path.join(self.test_base_path, 'test')
 
-        success, error = self.downloader._download_single_video(video_info, 'MP3', folder_path, 'highest')
+        success, error = self.downloader.downloadSingleVideo(video_info, 'MP3', folder_path, 'highest')
 
         assert success is True
         assert error == ""
 
         # Verify downloader was configured correctly
-        mock_mp3_downloader.set_url.assert_called_with('https://youtube.com/watch?v=1')
-        mock_mp3_downloader.set_path.assert_called_with(folder_path)
-        mock_mp3_downloader.download_as_mp3.assert_called_once()
+        mock_mp3_downloader.setUrl.assert_called_with('https://youtube.com/watch?v=1')
+        mock_mp3_downloader.setPath.assert_called_with(folder_path)
+        mock_mp3_downloader.downloadAsMp3.assert_called_once()
 
     def test_download_single_video_invalid_format(self):
         """Test single video download with invalid format."""
         video_info = {'url': 'https://youtube.com/watch?v=1', 'title': 'Test Video'}
         folder_path = os.path.join(self.test_base_path, 'test')
 
-        success, error = self.downloader._download_single_video(video_info, 'AVI', folder_path, 'highest')
+        success, error = self.downloader.downloadSingleVideo(video_info, 'AVI', folder_path, 'highest')
 
         assert success is False
         assert "Unsupported format: AVI" in error
 
-    @patch('src.BatchDownloader.YouTubeDownloader')
+    @patch('src.BatchDownloader.Mp4Downloader')
     def test_download_single_video_exception(self, mock_mp4_downloader_class):
         """Test single video download with exception."""
         mock_mp4_downloader = Mock()
         mock_mp4_downloader_class.return_value = mock_mp4_downloader
-        mock_mp4_downloader.download_video.side_effect = Exception("Network error")
+        mock_mp4_downloader.downloadVideo.side_effect = Exception("Network error")
 
         video_info = {'url': 'https://youtube.com/watch?v=1', 'title': 'Test Video'}
         folder_path = os.path.join(self.test_base_path, 'test')
 
-        success, error = self.downloader._download_single_video(video_info, 'MP4', folder_path, 'highest')
+        success, error = self.downloader.downloadSingleVideo(video_info, 'MP4', folder_path, 'highest')
 
         assert success is False
         assert error == "Network error"

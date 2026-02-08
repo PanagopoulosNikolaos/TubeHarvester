@@ -2,24 +2,41 @@ import os
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, Text
 import threading
-from .Mp4_Converter import YouTubeDownloader
-from .Mp3_Converter import MP3Downloader
+from .Mp4_Converter import Mp4Downloader
+from .Mp3_Converter import Mp3Downloader
 from pathlib import Path
 from .BatchDownloader import BatchDownloader
 from .CookieManager import CookieManager
-from .utils import sanitize_filename
+from .utils import sanitizeFilename
 
 
 class SingleDownloadPanel(ttk.Frame):
+    """
+    Panel for individual video downloads.
+
+    Provides a GUI for entering a YouTube URL, selecting format and resolution,
+    and tracking the download progress.
+    """
+
     def __init__(self, parent, colors):
+        """
+        Initializes the SingleDownloadPanel.
+
+        Args:
+            parent: The parent widget.
+            colors (dict): Theme color palette.
+        """
         super().__init__(parent)
         self.master = parent
         self.colors = colors
         self.downloader = None
         self.default_download_path = str(Path.home() / "Downloads")
-        self.build_gui()
+        self.buildGui()
 
-    def build_gui(self):
+    def buildGui(self):
+        """
+        Constructs the GUI components for the single download panel.
+        """
         # main frame for the single download panel
         main_frame = ttk.Frame(self.master, padding="10 10 10 10")
         main_frame.pack(expand=True, fill=tk.BOTH)
@@ -37,7 +54,7 @@ class SingleDownloadPanel(ttk.Frame):
         ttk.Label(url_path_frame, text="Download Path:").grid(row=1, column=0, sticky="w", pady=2)
         self.path_display = ttk.Entry(url_path_frame, width=50)
         self.path_display.grid(row=1, column=1, sticky="ew", pady=2)
-        self.browse_button = ttk.Button(url_path_frame, text="Browse", command=self.browse_path)
+        self.browse_button = ttk.Button(url_path_frame, text="Browse", command=self.browsePath)
         self.browse_button.grid(row=1, column=2, sticky="e", padx=5, pady=2)
         
         url_path_frame.columnconfigure(1, weight=1)
@@ -49,9 +66,9 @@ class SingleDownloadPanel(ttk.Frame):
         # format selection radio buttons (MP4/MP3)
         ttk.Label(options_frame, text="Format:").grid(row=0, column=0, sticky="w")
         self.format_var = tk.StringVar(value="MP4")
-        self.mp4_radio = ttk.Radiobutton(options_frame, text="MP4", variable=self.format_var, value="MP4", command=self.update_format_color)
+        self.mp4_radio = ttk.Radiobutton(options_frame, text="MP4", variable=self.format_var, value="MP4", command=self.updateFormatColor)
         self.mp4_radio.grid(row=0, column=1, sticky='w', padx=5)
-        self.mp3_radio = ttk.Radiobutton(options_frame, text="MP3", variable=self.format_var, value="MP3", command=self.update_format_color)
+        self.mp3_radio = ttk.Radiobutton(options_frame, text="MP3", variable=self.format_var, value="MP3", command=self.updateFormatColor)
         self.mp3_radio.grid(row=0, column=2, sticky='w', padx=5)
 
         # resolution selection dropdown menu
@@ -67,7 +84,7 @@ class SingleDownloadPanel(ttk.Frame):
         controls_frame.columnconfigure(1, weight=1)
 
         # download button configuration
-        self.download_button = ttk.Button(controls_frame, text="Download", command=self.start_download)
+        self.download_button = ttk.Button(controls_frame, text="Download", command=self.startDownload)
         self.download_button.grid(row=0, column=0, sticky="ew", padx=(0, 5))
         
         # removed close button as it's redundant with the window's X button
@@ -113,52 +130,96 @@ class SingleDownloadPanel(ttk.Frame):
         self.message_screen.pack(expand=True, fill=tk.BOTH, pady=5)
         self.message_screen.config(state=tk.DISABLED)
 
-        self.update_format_color()
+        self.updateFormatColor()
         self.last_checked_url = ""
-        self.master.after(1000, self.auto_fetch_resolutions)
+        self.master.after(1000, self.autoFetchResolutions)
 
-    def auto_fetch_resolutions(self):
+    def autoFetchResolutions(self):
+        """
+        Periodically checks the URL field to trigger resolution fetching.
+        """
         current_url = self.url_entry.get()
         if current_url and current_url != self.last_checked_url:
             self.last_checked_url = current_url
-            # run fetching in a separate thread to not block the GUI
-            threading.Thread(target=self.fetch_resolutions, daemon=True).start()
-        self.master.after(1000, self.auto_fetch_resolutions) # check again in 1 second
+            threading.Thread(target=self.fetchResolutions, daemon=True).start()
+        self.master.after(1000, self.autoFetchResolutions)
 
-    def browse_path(self):
-        path = filedialog.askdirectory()
+    def browsePath(self):
+        """
+        Opens a directory selection dialog.
+        """
+        path = filedialog.askdirectory(initialdir=os.path.expanduser('~'))
         if path:
             self.path_display.delete(0, tk.END)
             self.path_display.insert(0, path)
 
-    def fetch_resolutions(self):
-        url = self.last_checked_url # use the last checked URL
+    def fetchResolutions(self):
+        """
+        Fetches available resolutions for the current YouTube URL.
+        """
+        url = self.last_checked_url
         if not url:
-            return # silently return if no URL
+            return
 
         try:
-            downloader = YouTubeDownloader(log_callback=self.log_message)
-            downloader.set_url(url)
-            info = downloader.fetch_video_info()
+            downloader = Mp4Downloader(log_callback=self.logMessage)
+            downloader.setUrl(url)
+            
+            # Use the same options as the actual download to get all available formats
+            opts = {
+                'noplaylist': True, 
+                'cookiefile': downloader.cookie_manager.getCookieFile(),
+                'javascript_executor': '/home/ice/.deno/bin/deno',
+                'quiet': True,
+                'no_warnings': True,
+                'extractor_args': {
+                    'youtube': {
+                        'hl': 'en-US',
+                        'gl': 'US',
+                    }
+                },
+                'youtube_include_dash_manifest': True,
+                'youtube_include_hls_manifest': True,
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',  # Get all available formats for resolution selection
+            }
+            
+            import yt_dlp
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+            
             formats = info.get('formats', [])
-            resolutions = sorted(list(set([f['height'] for f in formats if f.get('height') and f.get('vcodec') != 'none'])), reverse=True)
+            
+            # Get all available resolutions from video formats
+            video_formats = [f for f in formats if f.get('height') and f.get('vcodec') != 'none']
+            resolutions = sorted(list(set([f['height'] for f in video_formats])), reverse=True)
+            
+            # Also include audio-only formats if available
+            audio_formats = [f for f in formats if f.get('vcodec') == 'none' and f.get('acodec') != 'none']
+            if audio_formats:
+                resolutions.append('Audio Only')
             
             if not resolutions:
                 messagebox.showinfo("Info", "No video resolutions found.")
                 return
 
-            self.resolution_var.set(resolutions[0]) # default to highest
+            self.resolution_var.set(resolutions[0])
             menu = self.resolution_menu['menu']
             menu.delete(0, 'end')
             for res in resolutions:
-                menu.add_command(label=f"{res}p", command=lambda value=res: self.resolution_var.set(value))
+                if res == 'Audio Only':
+                    menu.add_command(label=f"{res}", command=lambda value=res: self.resolution_var.set(value))
+                else:
+                    menu.add_command(label=f"{res}p", command=lambda value=res: self.resolution_var.set(value))
             
-            self.log_message("Resolutions fetched successfully.")
+            self.logMessage(f"Resolutions fetched successfully: {', '.join(map(str, resolutions))}")
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to fetch resolutions: {e}")
 
-    def start_download(self):
+    def startDownload(self):
+        """
+        Initializes and starts the download process in a separate thread.
+        """
         self.progress['value'] = 0
         self.progress.update()
 
@@ -170,46 +231,80 @@ class SingleDownloadPanel(ttk.Frame):
             if not resolution:
                 messagebox.showerror("Error", "Please fetch and select a resolution.")
                 return
-            self.downloader = YouTubeDownloader(self.update_progress, self.log_message)
-            self.downloader.set_url(url)
-            self.downloader.set_path(path)
+            self.downloader = Mp4Downloader(self.updateProgress, self.logMessage)
+            self.downloader.setUrl(url)
+            self.downloader.setPath(path)
             self.downloader.resolution = int(resolution)
-            download_thread = threading.Thread(target=self.downloader.download_video)
+            download_thread = threading.Thread(target=self.downloader.downloadVideo)
         elif self.format_var.get() == "MP3":
-            self.downloader = MP3Downloader(url, path, self.update_progress, self.log_message)
-            download_thread = threading.Thread(target=self.downloader.download_as_mp3)
+            self.downloader = Mp3Downloader(url, path, self.updateProgress, self.logMessage)
+            download_thread = threading.Thread(target=self.downloader.downloadAsMp3)
         download_thread.start()
 
-    def update_progress(self, percentage):
+    def updateProgress(self, percentage):
+        """
+        Updates the progress bar UI.
+
+        Args:
+            percentage (int): Progress percentage (0-100).
+        """
         self.progress['value'] = percentage
         self.progress.update()
         if percentage == 100:
-            self.master.after(3000, self.clear_progress_bar)
+            self.master.after(3000, self.clearProgressBar)
 
-    def clear_progress_bar(self):
+    def clearProgressBar(self):
+        """
+        Resets the progress bar to zero.
+        """
         self.progress['value'] = 0
         self.progress.update()
 
-    def log_message(self, message):
+    def logMessage(self, message):
+        """
+        Appends a message to the status display area.
+
+        Args:
+            message (str): The message to log.
+        """
         self.message_screen.config(state=tk.NORMAL)
         self.message_screen.insert(tk.END, message + "\n")
         self.message_screen.see(tk.END)
         self.message_screen.config(state=tk.DISABLED)
 
-    def update_format_color(self):
-        # this can be expanded to disable/enable the resolution dropdown
+    def updateFormatColor(self):
+        """
+        Updates the UI state based on the selected download format.
+        """
         is_mp4 = self.format_var.get() == "MP4"
         self.resolution_menu.config(state=tk.NORMAL if is_mp4 else tk.DISABLED)
 
 class BatchDownloadPanel(ttk.Frame):
+    """
+    Panel for batch video downloads (playlists and channels).
+
+    Allows users to scrape content from a playlist or channel and download
+    all videos in the desired format and quality.
+    """
+
     def __init__(self, parent, colors):
+        """
+        Initializes the BatchDownloadPanel.
+
+        Args:
+            parent: The parent widget.
+            colors (dict): Theme color palette.
+        """
         super().__init__(parent)
         self.master = parent
         self.colors = colors
-        self.build_gui()
-        self._display_startup_info()
+        self.buildGui()
+        self.displayStartupInfo()
 
-    def build_gui(self):
+    def buildGui(self):
+        """
+        Constructs the GUI components for the batch download panel.
+        """
         # Main frame
         main_frame = ttk.Frame(self, padding="10 10 10 10")
         main_frame.pack(expand=True, fill=tk.BOTH)
@@ -225,7 +320,7 @@ class BatchDownloadPanel(ttk.Frame):
         ttk.Label(url_path_frame, text="Base Path:").grid(row=1, column=0, sticky="w", pady=2)
         self.path_display = ttk.Entry(url_path_frame, width=50)
         self.path_display.grid(row=1, column=1, sticky="ew", pady=2)
-        self.browse_button = ttk.Button(url_path_frame, text="Browse", command=self.browse_path)
+        self.browse_button = ttk.Button(url_path_frame, text="Browse", command=self.browsePath)
         self.browse_button.grid(row=1, column=2, sticky="e", padx=5, pady=2)
 
         url_path_frame.columnconfigure(1, weight=1)
@@ -236,15 +331,16 @@ class BatchDownloadPanel(ttk.Frame):
 
         ttk.Label(options_frame, text="Format:").grid(row=0, column=0, sticky="w")
         self.format_var = tk.StringVar(value="MP4")
-        self.mp4_radio = ttk.Radiobutton(options_frame, text="MP4", variable=self.format_var, value="MP4", command=self.update_format_color)
+        self.mp4_radio = ttk.Radiobutton(options_frame, text="MP4", variable=self.format_var, value="MP4", command=self.updateFormatColor)
         self.mp4_radio.grid(row=0, column=1, sticky='w', padx=5)
-        self.mp3_radio = ttk.Radiobutton(options_frame, text="MP3", variable=self.format_var, value="MP3", command=self.update_format_color)
+        self.mp3_radio = ttk.Radiobutton(options_frame, text="MP3", variable=self.format_var, value="MP3", command=self.updateFormatColor)
         self.mp3_radio.grid(row=0, column=2, sticky='w', padx=5)
 
         ttk.Label(options_frame, text="Quality:").grid(row=1, column=0, sticky="w")
         self.quality_var = tk.StringVar(value="Highest")
         self.quality_menu = ttk.OptionMenu(options_frame, self.quality_var, "Highest")
         self.quality_menu.grid(row=1, column=1, sticky="w", pady=5)
+        self.populateQualityMenu()
 
         ttk.Label(options_frame, text="Max Videos:").grid(row=2, column=0, sticky="w")
         self.max_videos_var = tk.StringVar(value="200")
@@ -259,7 +355,7 @@ class BatchDownloadPanel(ttk.Frame):
         self.profile_radio.grid(row=3, column=2, sticky='w', padx=5)
 
         # Add trace to update Max Videos field when mode changes
-        self.mode_var.trace_add("write", self.update_max_videos_display)
+        self.mode_var.trace_add("write", self.updateMaxVideosDisplay)
 
         # Controls Frame
         controls_frame = ttk.Frame(main_frame)
@@ -267,10 +363,10 @@ class BatchDownloadPanel(ttk.Frame):
         controls_frame.columnconfigure(0, weight=1)
         controls_frame.columnconfigure(1, weight=1)
 
-        self.download_button = ttk.Button(controls_frame, text="Start Batch Download", command=self.start_batch_download)
+        self.download_button = ttk.Button(controls_frame, text="Start Batch Download", command=self.startBatchDownload)
         self.download_button.grid(row=0, column=0, sticky="ew", padx=(0, 5))
 
-        self.cancel_button = ttk.Button(controls_frame, text="Cancel", command=self.cancel_download, state=tk.DISABLED)
+        self.cancel_button = ttk.Button(controls_frame, text="Cancel", command=self.cancelDownload, state=tk.DISABLED)
         self.cancel_button.grid(row=0, column=1, sticky="ew", padx=(5, 0))
 
         # Fetching Data Progress Bar
@@ -313,28 +409,134 @@ class BatchDownloadPanel(ttk.Frame):
         self.message_screen.pack(expand=True, fill=tk.BOTH, pady=5)
         self.message_screen.config(state=tk.DISABLED)
 
-        self.update_format_color()
+        self.message_screen.config(state=tk.DISABLED)
 
-    def browse_path(self):
-        path = filedialog.askdirectory()
+        self.updateFormatColor()
+        self.last_checked_url = ""
+        self.master.after(1000, self.autoFetchResolutions)
+
+    def autoFetchResolutions(self):
+        """
+        Periodically checks the URL field to trigger resolution fetching.
+        """
+        current_url = self.url_entry.get()
+        if current_url and current_url != self.last_checked_url:
+            self.last_checked_url = current_url
+            threading.Thread(target=self.fetchResolutions, daemon=True).start()
+        self.master.after(1000, self.autoFetchResolutions)
+
+    def browsePath(self):
+        """
+        Opens a directory selection dialog.
+        """
+        path = filedialog.askdirectory(initialdir=os.path.expanduser('~'))
         if path:
             self.path_display.delete(0, tk.END)
             self.path_display.insert(0, path)
 
-    def update_format_color(self):
-        # this can be expanded to disable/enable the quality dropdown
-        pass
+    def fetchResolutions(self):
+        """
+        Fetches available resolutions from the first video in playlist/channel.
+        """
+        url = self.last_checked_url
+        if not url:
+            return
 
-    def update_max_videos_display(self, *args):
-        """Update the Max Videos field based on selected mode."""
+        try:
+            from .Mp4_Converter import Mp4Downloader
+            import yt_dlp
+            
+            downloader = Mp4Downloader(log_callback=self.logMessage)
+            
+            opts = {
+                'noplaylist': True,
+                'cookiefile': downloader.cookie_manager.getCookieFile(),
+                'javascript_executor': '/home/ice/.deno/bin/deno',
+                'quiet': True,
+                'no_warnings': True,
+                'extractor_args': {
+                    'youtube': {
+                        'hl': 'en-US',
+                        'gl': 'US',
+                    }
+                },
+                'youtube_include_dash_manifest': True,
+                'youtube_include_hls_manifest': True,
+            }
+            
+            # For playlists, get first video URL to check formats
+            fetch_url = url
+            if 'list=' in url:
+                with yt_dlp.YoutubeDL({'extract_flat': True, 'quiet': True}) as ydl:
+                    playlist_info = ydl.extract_info(url, download=False)
+                    if playlist_info and 'entries' in playlist_info and playlist_info['entries']:
+                        first_entry = playlist_info['entries'][0]
+                        if first_entry:
+                            fetch_url = f"https://www.youtube.com/watch?v={first_entry.get('id', '')}"
+            
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(fetch_url, download=False)
+            
+            formats = info.get('formats', [])
+            video_formats = [f for f in formats if f.get('height') and f.get('vcodec') != 'none']
+            resolutions = sorted(list(set([f['height'] for f in video_formats])), reverse=True)
+            
+            if not resolutions:
+                self.logMessage("No video resolutions found. Using preset values.")
+                return
+
+            # Update quality menu with actual resolutions
+            menu = self.quality_menu["menu"]
+            menu.delete(0, "end")
+            menu.add_command(label="Highest", command=lambda: self.quality_var.set("Highest"))
+            for res in resolutions:
+                menu.add_command(label=f"{res}p", command=lambda value=f"{res}p": self.quality_var.set(value))
+            
+            self.logMessage(f"Resolutions fetched: {', '.join([f'{r}p' for r in resolutions])}")
+
+        except Exception as e:
+            self.logMessage(f"Could not fetch resolutions: {e}")
+
+    def updateFormatColor(self):
+        """
+        Updates the UI state based on the selected download format.
+        """
+        is_mp4 = self.format_var.get() == "MP4"
+        self.quality_menu.config(state=tk.NORMAL if is_mp4 else tk.DISABLED)
+
+    def populateQualityMenu(self):
+        """
+        Populates the quality dropdown with common resolution choices.
+        """
+        quality_options = [
+            "Highest",
+            "2160p",
+            "1440p",
+            "1080p",
+            "720p",
+            "480p",
+            "360p",
+            "240p",
+            "144p",
+        ]
+        menu = self.quality_menu["menu"]
+        menu.delete(0, "end")
+        for option in quality_options:
+            menu.add_command(label=option, command=lambda value=option: self.quality_var.set(value))
+
+    def updateMaxVideosDisplay(self, *args):
+        """
+        Updates the Max Videos field based on the selected mode.
+        """
         if self.mode_var.get() == "Profile Scrape":
             self.max_videos_var.set("ALL")
         else:
-            # reset to default value when switching back to Playlist Download
             self.max_videos_var.set("200")
 
-    def start_batch_download(self):
-        """Start batch download based on selected mode."""
+    def startBatchDownload(self):
+        """
+        Starts the batch download process in a separate thread.
+        """
         url = self.url_entry.get().strip()
         base_path = self.path_display.get().strip() or os.path.expanduser('~')
         format_type = self.format_var.get()
@@ -342,187 +544,188 @@ class BatchDownloadPanel(ttk.Frame):
         max_videos_str = self.max_videos_var.get()
         mode = self.mode_var.get()
 
-        # handle "ALL" value for Profile Scrape mode
         if max_videos_str == "ALL":
-            max_videos = 10000  # use high limit for unlimited
+            max_videos = 10000
         else:
             max_videos = int(max_videos_str)
 
         if not url:
-            self.log_message("Error: Please enter a URL")
+            self.logMessage("Error: Please enter a URL")
             return
 
-        # disable start button and enable cancel button
         self.download_button.config(state=tk.DISABLED)
         self.cancel_button.config(state=tk.NORMAL)
-
-        # clear previous progress
         self.progress['value'] = 0
 
-        # start download in separate thread
         download_thread = threading.Thread(
-            target=self._execute_batch_download,
+            target=self.executeBatchDownload,
             args=(url, base_path, format_type, quality, max_videos, mode),
             daemon=True
         )
         download_thread.start()
 
-    def cancel_download(self):
-        """Cancel the ongoing batch download."""
+    def cancelDownload(self):
+        """
+        Cancels the ongoing batch download.
+        """
         if hasattr(self, 'batch_downloader') and self.batch_downloader:
-            self.batch_downloader.cancel_download()
+            self.batch_downloader.cancelDownload()
             self.cancel_button.config(state=tk.DISABLED)
             self.download_button.config(state=tk.NORMAL)
 
-    def _execute_batch_download(self, url, base_path, format_type, quality, max_videos, mode):
-        """Execute the batch download process."""
+    def executeBatchDownload(self, url, base_path, format_type, quality, max_videos, mode):
+        """
+        Coordinates the scraping and downloading process for a batch.
+
+        Args:
+            url (str): Target YouTube URL.
+            base_path (str): Base directory for files.
+            format_type (str): 'MP4' or 'MP3'.
+            quality (str): Quality preference.
+            max_videos (int): Video limit.
+            mode (str): Download mode.
+        """
         try:
             self.batch_downloader = None
-
-            # show fetch progress bar
             self.fetch_progress_frame.grid()
             self.fetch_progress['value'] = 0
             self.fetch_status_label.config(text="")
 
             if mode == "Playlist Download":
-                # scrape playlist
-                self.log_message(f"Scraping playlist: {url}")
+                self.logMessage(f"Scraping playlist: {url}")
                 from .PlaylistScraper import PlaylistScraper
                 scraper = PlaylistScraper(timeout=2.0)
                 
-                # create progress callback for fetching
-                def fetch_progress_callback(current, total, percentage):
-                    self._update_fetch_progress(current, total, percentage)
+                def fetchProgressCallback(current, total, percentage):
+                    self.updateFetchProgress(current, total, percentage)
                 
-                videos = scraper.scrape_playlist(url, max_videos, fetch_progress_callback)
+                videos = scraper.scrapePlaylist(url, max_videos, fetchProgressCallback)
 
                 if not videos:
-                    self.log_message("No videos found in playlist")
+                    self.logMessage("No videos found in playlist")
                     return
 
-                self.log_message(f"Found {len(videos)} videos in playlist")
+                self.logMessage(f"Found {len(videos)} videos in playlist")
 
-                # prepare video list for batch download
                 video_list = []
-                playlist_title = sanitize_filename(scraper.get_playlist_title(url))
+                playlist_title = sanitizeFilename(scraper.getPlaylistTitle(url))
                 for video in videos:
                     video_list.append({
                         'url': video['url'],
-                        'title': sanitize_filename(video['title']),
-                        'folder': f"Playlists/{playlist_title}"  # generic folder for playlist downloads
+                        'title': sanitizeFilename(video['title']),
+                        'folder': f"Playlists/{playlist_title}"
                     })
 
             elif mode == "Profile Scrape":
-                # scrape channel - no limit for profile scraping (get all videos)
-                self.log_message(f"Scraping channel: {url} (unlimited videos)")
+                self.logMessage(f"Scraping channel: {url}")
                 from .ChannelScraper import ChannelScraper
                 scraper = ChannelScraper(timeout=2.0)
                 
-                # create progress callback for fetching
-                def fetch_progress_callback(current, total, percentage):
-                    self._update_fetch_progress(current, total, percentage)
+                def fetchProgressCallback(current, total, percentage):
+                    self.updateFetchProgress(current, total, percentage)
                 
-                # use a very high limit for profile scraping to get all videos
-                channel_info = scraper.scrape_channel(url, 1000, fetch_progress_callback)  # 10k should be enough for most channels
+                channel_info = scraper.scrapeChannel(url, 1000, fetchProgressCallback)
 
                 if not channel_info['playlists'] and not channel_info['standalone_videos']:
-                    self.log_message("No content found in channel")
+                    self.logMessage("No content found in channel")
                     return
 
-                self.log_message(f"Found {len(channel_info['playlists'])} playlists and {len(channel_info['standalone_videos'])} standalone videos")
+                self.logMessage(f"Found {len(channel_info['playlists'])} playlists and {len(channel_info['standalone_videos'])} standalone videos")
 
-                # prepare video list for batch download
                 video_list = []
-                channel_name = sanitize_filename(channel_info['channel_name'])
+                channel_name = sanitizeFilename(channel_info['channel_name'])
 
-                # add videos from playlists
                 for playlist in channel_info['playlists']:
                     for video in playlist['videos']:
                         video_list.append({
                             'url': video['url'],
-                            'title': sanitize_filename(video['title']),
-                            'folder': f"{channel_name}/{sanitize_filename(playlist['title'])}"
+                            'title': sanitizeFilename(video['title']),
+                            'folder': f"{channel_name}/{sanitizeFilename(playlist['title'])}"
                         })
 
-                # add standalone videos
                 for video in channel_info['standalone_videos']:
                     video_list.append({
                         'url': video['url'],
-                        'title': sanitize_filename(video['title']),
+                        'title': sanitizeFilename(video['title']),
                         'folder': f"{channel_name}/Random"
                     })
 
-            # hide fetch progress bar and show download progress bar
             self.fetch_progress_frame.grid_remove()
-            self.download_progress_frame.grid() # Change to grid()
-            self.log_message("Data fetching complete. Starting downloads...")
+            self.download_progress_frame.grid()
+            self.logMessage("Data fetching complete. Starting downloads...")
 
-            # start batch download
             self.batch_downloader = BatchDownloader(
                 max_workers=3,
-                progress_callback=self._update_progress,
-                log_callback=self.log_message
+                progress_callback=self.updateProgress,
+                log_callback=self.logMessage
             )
 
-            results = self.batch_downloader.download_batch(
+            results = self.batch_downloader.downloadBatch(
                 video_list, format_type, base_path, quality
             )
 
-            # show final results
-            self.log_message(f"Batch download completed: {results['successful']} successful, {results['failed']} failed")
+            self.logMessage(f"Batch download completed: {results['successful']} successful, {results['failed']} failed")
             if results['errors']:
-                self.log_message("Errors encountered:")
-                for error in results['errors'][:5]:  # show first 5 errors
-                    self.log_message(f"  - {error}")
+                self.logMessage("Errors encountered:")
+                for error in results['errors'][:5]:
+                    self.logMessage(f"  - {error}")
                 if len(results['errors']) > 5:
-                    self.log_message(f"  ... and {len(results['errors']) - 5} more errors")
+                    self.logMessage(f"  ... and {len(results['errors']) - 5} more errors")
 
         except Exception as e:
-            self.log_message(f"Error during batch download: {str(e)}")
-            import traceback
-            self.log_message(f"Traceback: {traceback.format_exc()}")
+            self.logMessage(f"Error during batch download: {str(e)}")
 
         finally:
-            # hide both progress bars
             self.fetch_progress_frame.grid_remove()
-            self.download_progress_frame.grid_remove() # Change to grid_remove()
-            
-            # re-enable buttons
+            self.download_progress_frame.grid_remove()
             self.download_button.config(state=tk.NORMAL)
             self.cancel_button.config(state=tk.DISABLED)
             self.batch_downloader = None
 
-    def _update_fetch_progress(self, current, total, percentage):
-        """Update the fetch progress bar with ASCII-style visual."""
-        # update progress bar
+    def updateFetchProgress(self, current, total, percentage):
+        """
+        Updates the UI for data fetching progress.
+
+        Args:
+            current (int): Current item index.
+            total (int): Total items.
+            percentage (int): Percentage complete.
+        """
         self.fetch_progress['value'] = percentage
-        
-        # create ASCII-style progress bar
         bar_width = 20
         filled = int((percentage / 100) * bar_width)
         bar = '=' * filled + '>' + ' ' * (bar_width - filled - 1)
-        
-        # update status label with ASCII bar and stats
         status_text = f"[{bar}] {percentage}% ({current}/{total} items)"
         self.fetch_status_label.config(text=status_text)
-        
-        # force GUI update
         self.fetch_progress.update()
         self.fetch_status_label.update()
 
-    def _update_progress(self, percentage):
-        """Update the download progress bar."""
+    def updateProgress(self, percentage):
+        """
+        Updates the UI for download progress.
+
+        Args:
+            percentage (int): Percentage complete.
+        """
         self.progress['value'] = percentage
         self.progress.update()
 
-    def log_message(self, message):
+    def logMessage(self, message):
+        """
+        Logs a message to the status display.
+
+        Args:
+            message (str): The message to log.
+        """
         self.message_screen.config(state=tk.NORMAL)
         self.message_screen.insert(tk.END, message + "\n")
         self.message_screen.see(tk.END)
         self.message_screen.config(state=tk.DISABLED)
 
-    def _display_startup_info(self):
-        """Display startup configuration information."""
+    def displayStartupInfo(self):
+        """
+        Displays system and default configuration information at startup.
+        """
         import platform
         home_dir = os.path.expanduser('~')
         
@@ -532,28 +735,40 @@ class BatchDownloadPanel(ttk.Frame):
             "=" * 60,
             f"System: {platform.system()} {platform.release()}",
             f"Home Directory: {home_dir}",
-            f"Default Base Path: {home_dir}",
             "",
             "Default Settings:",
             f"  Format: {self.format_var.get()}",
-            f" Quality: {self.quality_var.get()}",
+            f"  Quality: {self.quality_var.get()}",
             f"  Max Videos: {self.max_videos_var.get()}",
-            f" Mode: {self.mode_var.get()}",
+            f"  Mode: {self.mode_var.get()}",
             "",
             "Output Structure:",
-            " MP3: ~/Music/<Source>/<Playlist or Random>/",
+            "  MP3: ~/Music/<Source>/<Playlist or Random>/",
             "  MP4: ~/Videos/<Source>/<Playlist or Random>/",
             "",
-            "Ready to download. Enter a playlist or channel URL to begin.",
+            "Ready for download.",
             "=" * 60,
             ""
         ]
         
         for line in info_lines:
-            self.log_message(line)
+            self.logMessage(line)
 
 class YouTubeDownloaderGUI:
+    """
+    Main application window for TubeHarvester.
+
+    Orchestrates the single and batch download panels, manages themes,
+    and initializes the GUI environment.
+    """
+
     def __init__(self, master):
+        """
+        Initializes the YouTubeDownloaderGUI.
+
+        Args:
+            master (tk.Tk): The root Tkinter window.
+        """
         self.master = master
         self.master.title('TubeHarvester - YouTube Downloader')
         self.master.geometry("750x750")
@@ -699,10 +914,13 @@ class YouTubeDownloaderGUI:
         self.batch_panel = BatchDownloadPanel(self.batch_tab, colors=self.colors)
         self.batch_panel.pack(expand=True, fill=tk.BOTH)
 
-def run_gui():
+def runGui():
+    """
+    Initializes and runs the TubeHarvester GUI application.
+    """
     root = tk.Tk()
     app = YouTubeDownloaderGUI(root)
     root.mainloop()
 
 if __name__ == "__main__":
-    run_gui()
+    runGui()

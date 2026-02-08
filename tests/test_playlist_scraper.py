@@ -39,7 +39,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.return_value = mock_playlist_info
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper.scrape_playlist(self.test_url, max_videos=5)
+        videos = self.scraper.scrapePlaylist(self.test_url, max_videos=5)
 
         expected_videos = [
             {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video_1', 'duration': 300},
@@ -70,7 +70,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.return_value = mock_playlist_info
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper.scrape_playlist(self.test_url, max_videos=3)
+        videos = self.scraper.scrapePlaylist(self.test_url, max_videos=3)
 
         # Should only return first 3 videos
         assert len(videos) == 3
@@ -89,7 +89,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.return_value = mock_playlist_info
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper.scrape_playlist(self.test_url)
+        videos = self.scraper.scrapePlaylist(self.test_url)
 
         assert videos == []
 
@@ -104,7 +104,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.return_value = mock_playlist_info
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper.scrape_playlist(self.test_url)
+        videos = self.scraper.scrapePlaylist(self.test_url)
 
         assert videos == []
 
@@ -125,7 +125,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.return_value = mock_playlist_info
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper.scrape_playlist(self.test_url)
+        videos = self.scraper.scrapePlaylist(self.test_url)
 
         # Should skip None entries
         expected_videos = [
@@ -145,7 +145,7 @@ class TestPlaylistScraper:
         mock_ydl_class.return_value = mock_ydl
 
         with pytest.raises(Exception, match="Network error"):
-            self.scraper.scrape_playlist(self.test_url)
+            self.scraper.scrapePlaylist(self.test_url)
 
     @patch('yt_dlp.YoutubeDL')
     def test_get_playlist_title_success(self, mock_ydl_class):
@@ -158,7 +158,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.return_value = mock_playlist_info
         mock_ydl_class.return_value = mock_ydl
 
-        title = self.scraper.get_playlist_title(self.test_url)
+        title = self.scraper.getPlaylistTitle(self.test_url)
 
         assert title == 'Test_Playlist'
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
@@ -172,7 +172,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.side_effect = Exception("Network error")
         mock_ydl_class.return_value = mock_ydl
 
-        title = self.scraper.get_playlist_title(self.test_url)
+        title = self.scraper.getPlaylistTitle(self.test_url)
 
         assert title == 'Unknown Playlist'
 
@@ -194,7 +194,7 @@ class TestPlaylistScraper:
         mock_ydl_class.return_value = mock_ydl
 
         scraper = PlaylistScraper(timeout=1.5)
-        scraper.scrape_playlist(self.test_url)
+        scraper.scrapePlaylist(self.test_url)
 
         # Should sleep once between the two videos
         mock_sleep.assert_called_with(1.5)
@@ -216,7 +216,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.return_value = mock_playlist_info
         mock_ydl_class.return_value = mock_ydl
 
-        videos = self.scraper.scrape_playlist(self.test_url)
+        videos = self.scraper.scrapePlaylist(self.test_url)
 
         expected_videos = [
             {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Unknown_Title', 'duration': 0},

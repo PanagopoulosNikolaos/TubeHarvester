@@ -26,7 +26,7 @@ def test_mp3_batch():
     # Step 1: Scrape playlist
     print("\n[STEP 1] Scraping playlist...")
     scraper = PlaylistScraper(timeout=0.5)
-    videos = scraper.scrape_playlist(playlist_url, max_videos=2)  # Just test with 2 videos
+    videos = scraper.scrapePlaylist(playlist_url, max_videos=2)  # Just test with 2 videos
     
     if not videos:
         print("✗ FAILED! No videos found.")
@@ -36,7 +36,7 @@ def test_mp3_batch():
     
     # Step 2: Prepare video list for batch download
     print("\n[STEP 2] Preparing video list for batch download...")
-    playlist_title = scraper.get_playlist_title(playlist_url)
+    playlist_title = scraper.getPlaylistTitle(playlist_url)
     video_list = []
     for video in videos:
         video_list.append({
@@ -69,7 +69,7 @@ def test_mp3_batch():
         # Test the download structure creation
         print("\n[STEP 4] Testing folder structure creation...")
         test_base_path = "/tmp/test_tubeharvester"
-        organized_paths = batch_downloader._create_folder_structure(
+        organized_paths = batch_downloader.createFolderStructure(
             video_list, test_base_path, "MP3"
         )
         

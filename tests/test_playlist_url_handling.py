@@ -33,12 +33,12 @@ def test_playlist_scraping():
     
     try:
         # Get playlist title
-        title = scraper.get_playlist_title(video_url_with_playlist)
+        title = scraper.getPlaylistTitle(video_url_with_playlist)
         print(f"Playlist Title: {title}")
         
         # Scrape first 5 videos as a test
         print("\nScraping first 5 videos...")
-        videos = scraper.scrape_playlist(video_url_with_playlist, max_videos=5)
+        videos = scraper.scrapePlaylist(video_url_with_playlist, max_videos=5)
         
         if videos:
             print(f"\n✓ SUCCESS! Found {len(videos)} videos:")
@@ -62,12 +62,12 @@ def test_playlist_scraping():
     
     try:
         # Get playlist title
-        title = scraper.get_playlist_title(direct_playlist_url)
+        title = scraper.getPlaylistTitle(direct_playlist_url)
         print(f"Playlist Title: {title}")
         
         # Scrape first 5 videos as a test
         print("\nScraping first 5 videos...")
-        videos = scraper.scrape_playlist(direct_playlist_url, max_videos=5)
+        videos = scraper.scrapePlaylist(direct_playlist_url, max_videos=5)
         
         if videos:
             print(f"\n✓ SUCCESS! Found {len(videos)} videos:")
