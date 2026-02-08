@@ -100,10 +100,11 @@ if __name__ == "__main__":
     test_actual_youtube_access()
     print()
     
-    print("✓ All tests passed! The YouTube mix fix is working correctly.")
+    print(" All tests passed! The YouTube mix fix is working correctly.")
     print("\nSummary of changes:")
     print("- Added _is_youtube_mix() to detect YouTube mix playlist IDs")
     print("- Updated URL normalization to handle mixes differently")
     print("- Enhanced scraping logic to try alternative approaches for mixes")
     print("- Updated title retrieval to handle mixes properly")
     print("- Maintained backward compatibility with regular playlists")
+    
