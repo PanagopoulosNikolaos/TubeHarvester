@@ -13,7 +13,7 @@ import os
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def test_mp3_batch():
+def testMp3Batch():
     """Test MP3 batch downloading with a small playlist."""
     
     # Test playlist URL
@@ -52,17 +52,17 @@ def test_mp3_batch():
     # Step 3: Test batch download initialization (don't actually download)
     print("\n[STEP 3] Testing BatchDownloader initialization...")
     
-    def log_callback(msg):
+    def logCallback(msg):
         print(f"[LOG] {msg}")
     
-    def progress_callback(pct):
+    def progressCallback(pct):
         print(f"[PROGRESS] {pct}%")
     
     try:
         batch_downloader = BatchDownloader(
             max_workers=1,
-            progress_callback=progress_callback,
-            log_callback=log_callback
+            progress_callback=progressCallback,
+            log_callback=logCallback
         )
         print("✓ BatchDownloader initialized successfully")
         
@@ -94,5 +94,5 @@ def test_mp3_batch():
     assert True
 
 if __name__ == "__main__":
-    success = test_mp3_batch()
+    success = testMp3Batch()
     sys.exit(0 if success else 1)

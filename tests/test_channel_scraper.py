@@ -11,19 +11,19 @@ class TestChannelScraper:
         self.test_url = "https://www.youtube.com/channel/test123"
         self.scraper = ChannelScraper()
 
-    def test_init(self):
+    def testInit(self):
         """Test initialization."""
         scraper = ChannelScraper()
         assert scraper.timeout == 2.0
 
-    def test_init_custom_timeout(self):
+    def testInitCustomTimeout(self):
         """Test initialization with custom timeout."""
         scraper = ChannelScraper(timeout=5.0)
         assert scraper.timeout == 5.0
 
     @patch('src.ChannelScraper.PlaylistScraper')
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_channel_success(self, mock_ydl_class, mock_playlist_scraper_class):
+    def testScrapeChannelSuccess(self, mock_ydl_class, mock_playlist_scraper_class):
         """Test successful channel scraping."""
         # Mock channel name extraction
         mock_ydl_channel = Mock()
@@ -86,38 +86,38 @@ class TestChannelScraper:
 
         assert result == expected_result
 
-    def test_normalize_channel_url_channel_format(self):
+    def testNormalizeChannelUrlChannelFormat(self):
         """Test URL normalization for already correct channel format."""
         url = "https://www.youtube.com/channel/UC123"
         result = self.scraper.normalizeChannelUrl(url)
         assert result == url
 
-    def test_normalize_channel_url_user_format(self):
+    def testNormalizeChannelUrlUserFormat(self):
         """Test URL normalization for user format."""
         url = "https://www.youtube.com/user/testuser"
         result = self.scraper.normalizeChannelUrl(url)
         assert result == "https://www.youtube.com/user/testuser"
 
-    def test_normalize_channel_url_custom_format(self):
+    def testNormalizeChannelUrlCustomFormat(self):
         """Test URL normalization for custom channel format."""
         url = "https://www.youtube.com/c/TestChannel"
         result = self.scraper.normalizeChannelUrl(url)
         assert result == url
 
-    def test_normalize_channel_url_at_format(self):
+    def testNormalizeChannelUrlAtFormat(self):
         """Test URL normalization for @ format."""
         url = "https://www.youtube.com/@TestChannel"
         result = self.scraper.normalizeChannelUrl(url)
         assert result == url
 
-    def test_normalize_channel_url_unknown_format(self):
+    def testNormalizeChannelUrlUnknownFormat(self):
         """Test URL normalization for unknown format."""
         url = "https://www.youtube.com/someother/test"
         result = self.scraper.normalizeChannelUrl(url)
         assert result == url
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_channel_name_success(self, mock_ydl_class):
+    def testGetChannelNameSuccess(self, mock_ydl_class):
         """Test successful channel name retrieval."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -131,7 +131,7 @@ class TestChannelScraper:
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_channel_name_failure(self, mock_ydl_class):
+    def testGetChannelNameFailure(self, mock_ydl_class):
         """Test channel name retrieval failure."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -144,7 +144,7 @@ class TestChannelScraper:
         assert result == 'Unknown Channel'
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_channel_playlists_success(self, mock_ydl_class):
+    def testGetChannelPlaylistsSuccess(self, mock_ydl_class):
         """Test successful channel playlists retrieval."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -168,7 +168,7 @@ class TestChannelScraper:
         assert playlists == expected_playlists
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_channel_playlists_no_entries(self, mock_ydl_class):
+    def testGetChannelPlaylistsNoEntries(self, mock_ydl_class):
         """Test channel playlists retrieval with no entries."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -181,7 +181,7 @@ class TestChannelScraper:
         assert playlists == []
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_channel_playlists_failure(self, mock_ydl_class):
+    def testGetChannelPlaylistsFailure(self, mock_ydl_class):
         """Test channel playlists retrieval failure."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -194,7 +194,7 @@ class TestChannelScraper:
         assert playlists == []
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_standalone_videos_success(self, mock_ydl_class):
+    def testGetStandaloneVideosSuccess(self, mock_ydl_class):
         """Test successful standalone videos retrieval."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -219,7 +219,7 @@ class TestChannelScraper:
         assert videos == expected_videos
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_standalone_videos_limited(self, mock_ydl_class):
+    def testGetStandaloneVideosLimited(self, mock_ydl_class):
         """Test standalone videos retrieval with limit."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -242,7 +242,7 @@ class TestChannelScraper:
         assert videos[1]['title'] == 'Video_2'
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_standalone_videos_failure(self, mock_ydl_class):
+    def testGetStandaloneVideosFailure(self, mock_ydl_class):
         """Test standalone videos retrieval failure."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -256,7 +256,7 @@ class TestChannelScraper:
 
     @patch('src.ChannelScraper.PlaylistScraper')
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_channel_playlist_failure(self, mock_ydl_class, mock_playlist_scraper_class):
+    def testScrapeChannelPlaylistFailure(self, mock_ydl_class, mock_playlist_scraper_class):
         """Test channel scraping when playlist scraping fails."""
         # Mock channel name extraction
         mock_ydl_channel = Mock()
@@ -296,7 +296,7 @@ class TestChannelScraper:
     @patch('time.sleep')
     @patch('src.ChannelScraper.PlaylistScraper')
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_channel_rate_limiting(self, mock_ydl_class, mock_playlist_scraper_class, mock_sleep):
+    def testScrapeChannelRateLimiting(self, mock_ydl_class, mock_playlist_scraper_class, mock_sleep):
         """Test that rate limiting is applied between playlist processing."""
         # Mock channel name extraction
         mock_ydl_channel = Mock()

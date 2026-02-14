@@ -11,7 +11,7 @@ from src.PlaylistScraper import PlaylistScraper
 # Configure logging to see any warnings/errors
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def test_playlist_scraping():
+def testPlaylistScraping():
     """Test playlist scraping with both URL formats."""
     
     # Video URL with playlist parameter
@@ -88,4 +88,4 @@ def test_playlist_scraping():
     print("=" * 80)
 
 if __name__ == "__main__":
-    test_playlist_scraping()
+    testPlaylistScraping()

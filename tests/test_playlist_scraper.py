@@ -11,18 +11,18 @@ class TestPlaylistScraper:
         self.test_url = "https://www.youtube.com/playlist?list=test123"
         self.scraper = PlaylistScraper()
 
-    def test_init(self):
+    def testInit(self):
         """Test initialization."""
         scraper = PlaylistScraper()
         assert scraper.timeout == 2.0
 
-    def test_init_custom_timeout(self):
+    def testInitCustomTimeout(self):
         """Test initialization with custom timeout."""
         scraper = PlaylistScraper(timeout=5.0)
         assert scraper.timeout == 5.0
 
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_playlist_success(self, mock_ydl_class):
+    def testScrapePlaylistSuccess(self, mock_ydl_class):
         """Test successful playlist scraping."""
         # Mock playlist info with entries
         mock_playlist_info = {
@@ -51,7 +51,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
 
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_playlist_limited_videos(self, mock_ydl_class):
+    def testScrapePlaylistLimitedVideos(self, mock_ydl_class):
         """Test playlist scraping with video limit."""
         # Mock playlist info with more entries than limit
         mock_playlist_info = {
@@ -79,7 +79,7 @@ class TestPlaylistScraper:
         assert videos[2]['title'] == 'Video_3'
 
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_playlist_no_entries(self, mock_ydl_class):
+    def testScrapePlaylistNoEntries(self, mock_ydl_class):
         """Test playlist scraping with no entries."""
         mock_playlist_info = {'entries': None}
 
@@ -94,7 +94,7 @@ class TestPlaylistScraper:
         assert videos == []
 
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_playlist_empty_entries(self, mock_ydl_class):
+    def testScrapePlaylistEmptyEntries(self, mock_ydl_class):
         """Test playlist scraping with empty entries list."""
         mock_playlist_info = {'entries': []}
 
@@ -109,7 +109,7 @@ class TestPlaylistScraper:
         assert videos == []
 
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_playlist_with_none_entries(self, mock_ydl_class):
+    def testScrapePlaylistWithNoneEntries(self, mock_ydl_class):
         """Test playlist scraping with None entries in list."""
         mock_playlist_info = {
             'entries': [
@@ -136,7 +136,7 @@ class TestPlaylistScraper:
         assert videos == expected_videos
 
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_playlist_failure(self, mock_ydl_class):
+    def testScrapePlaylistFailure(self, mock_ydl_class):
         """Test playlist scraping failure."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -148,7 +148,7 @@ class TestPlaylistScraper:
             self.scraper.scrapePlaylist(self.test_url)
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_playlist_title_success(self, mock_ydl_class):
+    def testGetPlaylistTitleSuccess(self, mock_ydl_class):
         """Test successful playlist title retrieval."""
         mock_playlist_info = {'title': 'Test Playlist'}
 
@@ -164,7 +164,7 @@ class TestPlaylistScraper:
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
 
     @patch('yt_dlp.YoutubeDL')
-    def test_get_playlist_title_failure(self, mock_ydl_class):
+    def testGetPlaylistTitleFailure(self, mock_ydl_class):
         """Test playlist title retrieval failure."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -178,7 +178,7 @@ class TestPlaylistScraper:
 
     @patch('time.sleep')
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_playlist_rate_limiting(self, mock_ydl_class, mock_sleep):
+    def testScrapePlaylistRateLimiting(self, mock_ydl_class, mock_sleep):
         """Test that rate limiting is applied between video processing."""
         mock_playlist_info = {
             'entries': [
@@ -200,7 +200,7 @@ class TestPlaylistScraper:
         mock_sleep.assert_called_with(1.5)
 
     @patch('yt_dlp.YoutubeDL')
-    def test_scrape_playlist_missing_fields(self, mock_ydl_class):
+    def testScrapePlaylistMissingFields(self, mock_ydl_class):
         """Test playlist scraping with missing fields in entries."""
         mock_playlist_info = {
             'entries': [

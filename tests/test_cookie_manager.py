@@ -9,7 +9,7 @@ class TestCookieManager:
         self.cookie_manager = CookieManager()
 
     @patch('pathlib.Path.exists')
-    def test_get_cookie_file_exists(self, mock_exists):
+    def testGetCookieFileExists(self, mock_exists):
         mock_exists.return_value = True
         cookie_file = self.cookie_manager.getCookieFile()
         assert cookie_file == "yt_cookies.txt"
@@ -18,7 +18,7 @@ class TestCookieManager:
     @patch('subprocess.run')
     @patch('pathlib.Path.exists')
     @patch('pathlib.Path.stat')
-    def test_get_cookie_file_extracts_successfully(self, mock_stat, mock_exists, mock_subprocess_run, mock_shutil_which):
+    def testGetCookieFileExtractsSuccessfully(self, mock_stat, mock_exists, mock_subprocess_run, mock_shutil_which):
         mock_exists.side_effect = [False, True] # First call in get_cookie_file, second in extract_cookies
         mock_shutil_which.return_value = True
         mock_subprocess_run.return_value = Mock(returncode=0)
@@ -31,7 +31,7 @@ class TestCookieManager:
     @patch('shutil.which')
     @patch('subprocess.run')
     @patch('pathlib.Path.exists')
-    def test_get_cookie_file_extraction_fails(self, mock_exists, mock_subprocess_run, mock_shutil_which):
+    def testGetCookieFileExtractionFails(self, mock_exists, mock_subprocess_run, mock_shutil_which):
         mock_exists.return_value = False
         mock_shutil_which.return_value = True
         mock_subprocess_run.return_value = Mock(returncode=1, stderr="error")
@@ -41,7 +41,7 @@ class TestCookieManager:
         assert mock_subprocess_run.call_count == len(self.cookie_manager.BROWSERS)
 
     @patch('shutil.which', return_value=False)
-    def test_extract_cookies_no_browsers_found(self, mock_shutil_which):
+    def testExtractCookiesNoBrowsersFound(self, mock_shutil_which):
         assert self.cookie_manager.extractCookies() is False
 
     @patch('shutil.which')
@@ -49,7 +49,7 @@ class TestCookieManager:
     @patch('pathlib.Path.exists', return_value=True)
     @patch('pathlib.Path.stat')
     @patch('pathlib.Path.unlink')
-    def test_extract_cookies_empty_file(self, mock_unlink, mock_stat, mock_exists, mock_subprocess_run, mock_shutil_which):
+    def testExtractCookiesEmptyFile(self, mock_unlink, mock_stat, mock_exists, mock_subprocess_run, mock_shutil_which):
         mock_shutil_which.return_value = True
         mock_subprocess_run.return_value = Mock(returncode=0)
         mock_stat.return_value = Mock(st_size=0) # Simulate empty file

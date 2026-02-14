@@ -23,45 +23,45 @@ class TestMp3Downloader:
                 os.unlink(file_path)
         os.rmdir(self.test_path)
 
-    def test_init_with_url_and_path(self):
+    def testInitWithUrlAndPath(self):
         """Test initialization with URL and path."""
         downloader = Mp3Downloader(self.test_url, self.test_path)
         assert downloader.url == self.test_url
         assert downloader.save_path == self.test_path
 
-    def test_init_without_url_and_path(self):
+    def testInitWithoutUrlAndPath(self):
         """Test initialization without URL and path."""
         downloader = Mp3Downloader()
         assert downloader.url is None
         assert downloader.save_path == Mp3Downloader.getDefaultDownloadPath()
 
-    def test_set_url(self):
+    def testSetUrl(self):
         """Test setting URL."""
         downloader = Mp3Downloader()
         downloader.setUrl(self.test_url)
         assert downloader.url == self.test_url
 
-    def test_set_path(self):
+    def testSetPath(self):
         """Test setting save path."""
         downloader = Mp3Downloader()
         downloader.setPath(self.test_path)
         assert downloader.save_path == self.test_path
 
-    def test_set_path_none_uses_default(self):
+    def testSetPathNoneUsesDefault(self):
         """Test setting path to None uses default."""
         downloader = Mp3Downloader()
         downloader.setPath(None)
         assert downloader.save_path == Mp3Downloader.getDefaultDownloadPath()
 
     @staticmethod
-    def test_get_default_download_path():
+    def testGetDefaultDownloadPath():
         """Test getting default download path."""
         home_dir = os.path.expanduser('~')
         expected_path = os.path.join(home_dir, 'Downloads')
         assert Mp3Downloader.getDefaultDownloadPath() == expected_path
 
     @patch('yt_dlp.YoutubeDL')
-    def test_download_as_mp3_success(self, mock_ydl_class):
+    def testDownloadAsMp3Success(self, mock_ydl_class):
         """Test successful MP3 download."""
         # Mock the YoutubeDL instances as context managers
         mock_ydl_info = Mock()
@@ -90,7 +90,7 @@ class TestMp3Downloader:
         log_callback.assert_called()
 
     @patch('yt_dlp.YoutubeDL')
-    def test_download_as_mp3_with_custom_title(self, mock_ydl_class):
+    def testDownloadAsMp3WithCustomTitle(self, mock_ydl_class):
         """Test MP3 download with custom title."""
         mock_ydl_info = Mock()
         mock_ydl_info.__enter__ = Mock(return_value=mock_ydl_info)
@@ -112,7 +112,7 @@ class TestMp3Downloader:
         assert download_call == [self.test_url]
 
     @patch('yt_dlp.YoutubeDL')
-    def test_download_as_mp3_failure(self, mock_ydl_class):
+    def testDownloadAsMp3Failure(self, mock_ydl_class):
         """Test MP3 download failure."""
         mock_ydl_info = Mock()
         mock_ydl_info.__enter__ = Mock(return_value=mock_ydl_info)
@@ -130,7 +130,7 @@ class TestMp3Downloader:
         # Verify error was logged
         log_callback.assert_called()
 
-    def test_progress_hook_downloading(self):
+    def testProgressHookDownloading(self):
         """Test progress hook during downloading."""
         progress_callback = Mock()
         downloader = Mp3Downloader(progress_callback=progress_callback)
@@ -147,7 +147,7 @@ class TestMp3Downloader:
         # Verify progress callback was called with 50%
         progress_callback.assert_called_with(50)
 
-    def test_progress_hook_finished(self):
+    def testProgressHookFinished(self):
         """Test progress hook when finished."""
         progress_callback = Mock()
         downloader = Mp3Downloader(progress_callback=progress_callback)
@@ -160,7 +160,7 @@ class TestMp3Downloader:
         # Verify progress callback was called with 100%
         progress_callback.assert_called_with(100)
 
-    def test_progress_hook_no_total_bytes(self):
+    def testProgressHookNoTotalBytes(self):
         """Test progress hook with no total bytes."""
         progress_callback = Mock()
         downloader = Mp3Downloader(progress_callback=progress_callback)

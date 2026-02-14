@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from src.PlaylistScraper import PlaylistScraper
 import yt_dlp
 
-def test_youtube_mix_detection():
+def testYoutubeMixDetection():
     """Test that the scraper can detect YouTube mix URLs."""
     scraper = PlaylistScraper()
     
@@ -38,7 +38,7 @@ def test_youtube_mix_detection():
     print("✓ YouTube mix detection working correctly")
     assert True
 
-def test_url_normalization():
+def testUrlNormalization():
     """Test that URLs are normalized properly."""
     scraper = PlaylistScraper()
     
@@ -57,7 +57,7 @@ def test_url_normalization():
     print("✓ URL normalization working")
     assert True
 
-def test_actual_youtube_access():
+def testActualYoutubeAccess():
     """Test accessing a real YouTube mix (this might fail due to network or YouTube restrictions)."""
     scraper = PlaylistScraper()
     
@@ -91,13 +91,13 @@ if __name__ == "__main__":
     print("Testing YouTube Mix Fix Implementation")
     print("="*50)
     
-    test_youtube_mix_detection()
+    testYoutubeMixDetection()
     print()
     
-    test_url_normalization()
+    testUrlNormalization()
     print()
     
-    test_actual_youtube_access()
+    testActualYoutubeAccess()
     print()
     
     print(" All tests passed! The YouTube mix fix is working correctly.")

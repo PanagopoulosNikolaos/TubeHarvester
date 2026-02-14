@@ -32,7 +32,7 @@ class TestSingleDownloadPanel:
             self.root.destroy()
 
     @patch('tkinter.filedialog.askdirectory')
-    def test_browse_path(self, mock_askdirectory):
+    def testBrowsePath(self, mock_askdirectory):
         """Test browse path functionality."""
         mock_askdirectory.return_value = "/test/path"
 
@@ -42,7 +42,7 @@ class TestSingleDownloadPanel:
 
     @patch('src.GUI.messagebox')
     @patch('yt_dlp.YoutubeDL')
-    def test_fetch_resolutions_no_formats(self, mock_ydl_class, mock_messagebox):
+    def testFetchResolutionsNoFormats(self, mock_ydl_class, mock_messagebox):
         """Test fetching resolutions when no video formats found."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -58,7 +58,7 @@ class TestSingleDownloadPanel:
 
     @patch('src.GUI.messagebox')
     @patch('yt_dlp.YoutubeDL')
-    def test_fetch_resolutions_error(self, mock_ydl_class, mock_messagebox):
+    def testFetchResolutionsError(self, mock_ydl_class, mock_messagebox):
         """Test fetching resolutions with error."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -74,7 +74,7 @@ class TestSingleDownloadPanel:
 
     @patch('src.GUI.Mp4Downloader')
     @patch('threading.Thread')
-    def test_start_download_mp4(self, mock_thread_class, mock_downloader_class):
+    def testStartDownloadMp4(self, mock_thread_class, mock_downloader_class):
         """Test starting MP4 download."""
         mock_downloader = Mock()
         mock_downloader_class.return_value = mock_downloader
@@ -99,7 +99,7 @@ class TestSingleDownloadPanel:
 
     @patch('src.GUI.Mp3Downloader')
     @patch('threading.Thread')
-    def test_start_download_mp3(self, mock_thread_class, mock_mp3_downloader_class):
+    def testStartDownloadMp3(self, mock_thread_class, mock_mp3_downloader_class):
         """Test starting MP3 download."""
         mock_downloader = Mock()
         mock_mp3_downloader_class.return_value = mock_downloader
@@ -121,7 +121,7 @@ class TestSingleDownloadPanel:
         mock_thread.start.assert_called_once()
 
     @patch('tkinter.messagebox.showerror')
-    def test_start_download_mp4_no_resolution(self, mock_messagebox):
+    def testStartDownloadMp4NoResolution(self, mock_messagebox):
         """Test starting MP4 download without resolution."""
         self.panel.url_entry.insert(0, "https://youtube.com/watch?v=test")
         self.panel.format_var.set("MP4")
@@ -131,21 +131,21 @@ class TestSingleDownloadPanel:
 
         mock_messagebox.assert_called_with("Error", "Please fetch and select a resolution.")
 
-    def test_update_progress(self):
+    def testUpdateProgress(self):
         """Test progress update."""
         self.panel.progress['value'] = 0
         self.panel.updateProgress(50)
 
         assert self.panel.progress['value'] == 50
 
-    def test_clear_progress_bar(self):
+    def testClearProgressBar(self):
         """Test clearing progress bar."""
         self.panel.progress['value'] = 50
         self.panel.clearProgressBar()
 
         assert self.panel.progress['value'] == 0
 
-    def test_log_message(self):
+    def testLogMessage(self):
         """Test logging message."""
         self.panel.logMessage("Test message")
 
@@ -153,7 +153,7 @@ class TestSingleDownloadPanel:
         content = self.panel.message_screen.get("1.0", tk.END).strip()
         assert "Test message" in content
 
-    def test_update_format_color_mp4(self):
+    def testUpdateFormatColorMp4(self):
         """Test format color update for MP4."""
         self.panel.format_var.set("MP4")
         self.panel.updateFormatColor()
@@ -161,7 +161,7 @@ class TestSingleDownloadPanel:
         # Resolution menu should be enabled for MP4
         assert str(self.panel.resolution_menu['state']) == 'normal'
 
-    def test_update_format_color_mp3(self):
+    def testUpdateFormatColorMp3(self):
         """Test format color update for MP3."""
         self.panel.format_var.set("MP3")
         self.panel.updateFormatColor()
@@ -196,7 +196,7 @@ class TestBatchDownloadPanel:
             self.root.destroy()
 
     @patch('tkinter.filedialog.askdirectory')
-    def test_browse_path(self, mock_askdirectory):
+    def testBrowsePath(self, mock_askdirectory):
         """Test browse path functionality."""
         mock_askdirectory.return_value = "/test/path"
 
@@ -204,21 +204,21 @@ class TestBatchDownloadPanel:
 
         assert self.panel.path_display.get() == "/test/path"
 
-    def test_update_max_videos_display_playlist(self):
+    def testUpdateMaxVideosDisplayPlaylist(self):
         """Test max videos display update for playlist mode."""
         self.panel.mode_var.set("Playlist Download")
         self.panel.updateMaxVideosDisplay()
 
         assert self.panel.max_videos_var.get() == "200"
 
-    def test_update_max_videos_display_profile(self):
+    def testUpdateMaxVideosDisplayProfile(self):
         """Test max videos display update for profile scrape mode."""
         self.panel.mode_var.set("Profile Scrape")
         self.panel.updateMaxVideosDisplay()
 
         assert self.panel.max_videos_var.get() == "ALL"
 
-    def test_start_batch_download_no_url(self):
+    def testStartBatchDownloadNoUrl(self):
         """Test starting batch download without URL."""
         self.panel.startBatchDownload()
 
@@ -229,7 +229,7 @@ class TestBatchDownloadPanel:
     @patch('src.PlaylistScraper.PlaylistScraper')
     @patch('src.BatchDownloader.BatchDownloader')
     @patch('threading.Thread')
-    def test_start_batch_download_playlist_mode(self, mock_thread_class, mock_batch_downloader_class, mock_playlist_scraper_class):
+    def testStartBatchDownloadPlaylistMode(self, mock_thread_class, mock_batch_downloader_class, mock_playlist_scraper_class):
         """Test starting batch download in playlist mode."""
         # Mock playlist scraper
         mock_scraper = Mock()
@@ -270,7 +270,7 @@ class TestBatchDownloadPanel:
     @patch('src.ChannelScraper.ChannelScraper')
     @patch('src.BatchDownloader.BatchDownloader')
     @patch('threading.Thread')
-    def test_start_batch_download_profile_mode(self, mock_thread_class, mock_batch_downloader_class, mock_channel_scraper_class):
+    def testStartBatchDownloadProfileMode(self, mock_thread_class, mock_batch_downloader_class, mock_channel_scraper_class):
         """Test starting batch download in profile scrape mode."""
         # Mock channel scraper
         mock_scraper = Mock()
@@ -307,7 +307,7 @@ class TestBatchDownloadPanel:
         # Verify thread was started
         mock_thread.start.assert_called_once()
 
-    def test_cancel_download(self):
+    def testCancelDownload(self):
         """Test cancelling download."""
         # Mock batch downloader
         mock_batch_downloader = Mock()
@@ -322,14 +322,14 @@ class TestBatchDownloadPanel:
         assert str(self.panel.cancel_button['state']) == 'disabled'
         assert str(self.panel.download_button['state']) == 'normal'
 
-    def test_cancel_download_no_downloader(self):
+    def testCancelDownloadNoDownloader(self):
         """Test cancelling download when no downloader exists."""
         self.panel.batch_downloader = None
 
         # Should not raise an exception
         self.panel.cancelDownload()
 
-    def test_log_message(self):
+    def testLogMessage(self):
         """Test logging message."""
         self.panel.logMessage("Test message")
 
@@ -351,7 +351,7 @@ class TestYouTubeDownloaderGUI:
         if self.root:
             self.root.destroy()
 
-    def test_gui_initialization(self):
+    def testGuiInitialization(self):
         """Test GUI initialization."""
         # Create a new root for this specific test to avoid conflicts
         test_root = tk.Tk()
@@ -374,7 +374,7 @@ class TestYouTubeDownloaderGUI:
         test_root.destroy()
 
     @patch('tkinter.Tk')
-    def test_run_gui(self, mock_tk_class):
+    def testRunGui(self, mock_tk_class):
         """Test running the GUI."""
         mock_root = Mock()
         mock_tk_class.return_value = mock_root

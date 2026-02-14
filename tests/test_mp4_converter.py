@@ -30,7 +30,7 @@ class TestMp4Downloader:
             except:
                 pass  # Ignore cleanup errors
 
-    def test_init(self):
+    def testInit(self):
         """Test initialization."""
         downloader = Mp4Downloader()
         assert downloader.url is None
@@ -38,7 +38,7 @@ class TestMp4Downloader:
         assert downloader.progress_callback is None
         assert downloader.log_callback is None
 
-    def test_init_with_callbacks(self):
+    def testInitWithCallbacks(self):
         """Test initialization with callbacks."""
         progress_callback = Mock()
         log_callback = Mock()
@@ -47,31 +47,31 @@ class TestMp4Downloader:
         assert downloader.log_callback == log_callback
 
     @staticmethod
-    def test_get_default_download_path():
+    def testGetDefaultDownloadPath():
         """Test getting default download path."""
         home_dir = os.path.expanduser('~')
         expected_path = os.path.join(home_dir, 'Downloads')
         assert Mp4Downloader.getDefaultDownloadPath() == expected_path
 
-    def test_set_url(self):
+    def testSetUrl(self):
         """Test setting URL."""
         self.downloader.setUrl(self.test_url)
         assert self.downloader.url == self.test_url
 
-    def test_set_path(self):
+    def testSetPath(self):
         """Test setting save path."""
         self.downloader.setPath(self.test_path)
         assert self.downloader.path == self.test_path
         # Verify directory was created
         assert os.path.exists(self.test_path)
 
-    def test_set_path_none_uses_default(self):
+    def testSetPathNoneUsesDefault(self):
         """Test setting path to None uses default."""
         self.downloader.setPath(None)
         assert self.downloader.path == Mp4Downloader.getDefaultDownloadPath()
 
     @patch('yt_dlp.YoutubeDL')
-    def test_fetch_video_info_success(self, mock_ydl_class):
+    def testFetchVideoInfoSuccess(self, mock_ydl_class):
         """Test successful video info fetching."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -89,13 +89,13 @@ class TestMp4Downloader:
         assert result == mock_info
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
 
-    def test_fetch_video_info_no_url(self):
+    def testFetchVideoInfoNoUrl(self):
         """Test fetching video info without URL set."""
         with pytest.raises(ValueError, match="URL is not set"):
             self.downloader.fetchVideoInfo()
 
     @patch('yt_dlp.YoutubeDL')
-    def test_download_video_success(self, mock_ydl_class):
+    def testDownloadVideoSuccess(self, mock_ydl_class):
         """Test successful video download."""
         # Mock video info
         mock_ydl = Mock()
@@ -127,13 +127,13 @@ class TestMp4Downloader:
         # Verify log callback was called
         log_callback.assert_any_call("Download complete: Test_Video")
 
-    def test_download_video_no_url(self):
+    def testDownloadVideoNoUrl(self):
         """Test downloading video without URL set."""
         with pytest.raises(ValueError, match="URL is not set"):
             self.downloader.downloadVideo()
 
     @patch('yt_dlp.YoutubeDL')
-    def test_download_video_with_custom_title(self, mock_ydl_class):
+    def testDownloadVideoWithCustomTitle(self, mock_ydl_class):
         """Test video download with custom title."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -155,7 +155,7 @@ class TestMp4Downloader:
         # but the logic for sanitizing exists.
         assert self.downloader.video_title == "Original_Title"
 
-    def test_progress_hook_downloading(self):
+    def testProgressHookDownloading(self):
         """Test progress hook during downloading."""
         progress_callback = Mock()
         self.downloader.progress_callback = progress_callback
@@ -171,7 +171,7 @@ class TestMp4Downloader:
         # Verify progress callback was called with parsed progress
         progress_callback.assert_called_with(50)
 
-    def test_progress_hook_finished(self):
+    def testProgressHookFinished(self):
         """Test progress hook when finished."""
         progress_callback = Mock()
         self.downloader.progress_callback = progress_callback
@@ -188,7 +188,7 @@ class TestMp4Downloader:
         # but let's check current implementation behavior
         progress_callback.assert_not_called()
 
-    def test_progress_hook_no_total_bytes(self):
+    def testProgressHookNoTotalBytes(self):
         """Test progress hook with no total bytes."""
         progress_callback = Mock()
         self.downloader.progress_callback = progress_callback
@@ -207,7 +207,7 @@ class TestMp4Downloader:
     @patch('os.system')
     @patch('os.remove')
     @patch('os.listdir')
-    def test_merge_files_success(self, mock_listdir, mock_remove, mock_system):
+    def testMergeFilesSuccess(self, mock_listdir, mock_remove, mock_system):
         """Test successful file merging."""
         mock_listdir.return_value = ['video_temp.mp4', 'audio_temp.m4a']
         mock_system.return_value = 0
@@ -218,7 +218,7 @@ class TestMp4Downloader:
         self.downloader.video_title = "Test Video"
 
     @patch('logging.error')
-    def test_handle_error(self, mock_logging_error):
+    def testHandleError(self, mock_logging_error):
         """Test error handling."""
         log_callback = Mock()
         self.downloader.log_callback = log_callback

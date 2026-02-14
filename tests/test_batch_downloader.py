@@ -29,7 +29,7 @@ class TestBatchDownloader:
             except:
                 pass  # Ignore cleanup errors
 
-    def test_init(self):
+    def testInit(self):
         """Test initialization."""
         downloader = BatchDownloader()
         assert downloader.max_workers == 3  # Default value
@@ -38,7 +38,7 @@ class TestBatchDownloader:
         assert downloader.total_videos == 0
         assert downloader.completed_videos == 0
 
-    def test_init_with_parameters(self):
+    def testInitWithParameters(self):
         """Test initialization with custom parameters."""
         progress_callback = Mock()
         log_callback = Mock()
@@ -48,7 +48,7 @@ class TestBatchDownloader:
         assert downloader.log_callback == log_callback
 
     @patch('src.BatchDownloader.Mp4Downloader')
-    def test_download_batch_mp4_success(self, mock_mp4_downloader_class):
+    def testDownloadBatchMp4Success(self, mock_mp4_downloader_class):
         """Test successful MP4 batch download."""
         # Mock MP4 downloader
         mock_mp4_downloader = Mock()
@@ -86,7 +86,7 @@ class TestBatchDownloader:
         assert progress_callback.call_count >= 2  # Progress updates
 
     @patch('src.BatchDownloader.Mp3Downloader')
-    def test_download_batch_mp3_success(self, mock_mp3_downloader_class):
+    def testDownloadBatchMp3Success(self, mock_mp3_downloader_class):
         """Test successful MP3 batch download."""
         # Mock MP3 downloader
         mock_mp3_downloader = Mock()
@@ -119,7 +119,7 @@ class TestBatchDownloader:
         assert mock_mp3_downloader.setPath.call_count == 2
         assert mock_mp3_downloader.downloadAsMp3.call_count == 2
 
-    def test_download_batch_empty_list(self):
+    def testDownloadBatchEmptyList(self):
         """Test batch download with empty video list."""
         log_callback = Mock()
         downloader = BatchDownloader(log_callback=log_callback)
@@ -133,7 +133,7 @@ class TestBatchDownloader:
         # Verify log callback was called
         log_callback.assert_called_with("No videos to download")
 
-    def test_download_batch_invalid_format(self):
+    def testDownloadBatchInvalidFormat(self):
         """Test batch download with invalid format."""
         video_list = [
             {'url': 'https://youtube.com/watch?v=1', 'title': 'Video 1', 'folder': ''}
@@ -158,7 +158,7 @@ class TestBatchDownloader:
             assert "Unsupported format: AVI" in result['errors'][0]
 
     @patch('src.BatchDownloader.Mp4Downloader')
-    def test_download_batch_partial_failure(self, mock_mp4_downloader_class):
+    def testDownloadBatchPartialFailure(self, mock_mp4_downloader_class):
         """Test batch download with some failures."""
         # Mock downloaders - first succeeds, second fails
         mock_downloader1 = Mock()
@@ -188,7 +188,7 @@ class TestBatchDownloader:
         assert result['failed'] == 1
         assert len(result['errors']) == 1
 
-    def test_cancel_download(self):
+    def testCancelDownload(self):
         """Test download cancellation."""
         log_callback = Mock()
         downloader = BatchDownloader(log_callback=log_callback)
@@ -198,7 +198,7 @@ class TestBatchDownloader:
         assert downloader.cancel_event.is_set()
         log_callback.assert_called_with("Cancelling batch download...")
 
-    def test_create_folder_structure_mp3(self):
+    def testCreateFolderStructureMp3(self):
         """Test folder structure creation for MP3 downloads."""
         video_list = [
             {'url': 'https://youtube.com/watch?v=1', 'title': 'Video 1', 'folder': 'Channel1/Playlist1'},
@@ -221,7 +221,7 @@ class TestBatchDownloader:
         assert os.path.exists(expected_playlist_path)
         assert os.path.exists(expected_random_path)
 
-    def test_create_folder_structure_mp4(self):
+    def testCreateFolderStructureMp4(self):
         """Test folder structure creation for MP4 downloads."""
         video_list = [
             {'url': 'https://youtube.com/watch?v=1', 'title': 'Video 1', 'folder': 'Channel1/Playlist1'}
@@ -240,7 +240,7 @@ class TestBatchDownloader:
 
     @patch('threading.Event')
     @patch('concurrent.futures.ThreadPoolExecutor')
-    def test_download_batch_cancellation(self, mock_executor_class, mock_event_class):
+    def testDownloadBatchCancellation(self, mock_executor_class, mock_event_class):
         """Test batch download cancellation during execution."""
         # Mock event
         mock_event = Mock()
@@ -272,7 +272,7 @@ class TestBatchDownloader:
         log_callback.assert_called_with("Batch download cancelled")
 
     @patch('src.BatchDownloader.Mp4Downloader')
-    def test_download_single_video_mp4(self, mock_mp4_downloader_class):
+    def testDownloadSingleVideoMp4(self, mock_mp4_downloader_class):
         """Test single MP4 video download."""
         mock_mp4_downloader = Mock()
         mock_mp4_downloader_class.return_value = mock_mp4_downloader
@@ -291,7 +291,7 @@ class TestBatchDownloader:
         mock_mp4_downloader.downloadVideo.assert_called_once()
 
     @patch('src.BatchDownloader.Mp3Downloader')
-    def test_download_single_video_mp3(self, mock_mp3_downloader_class):
+    def testDownloadSingleVideoMp3(self, mock_mp3_downloader_class):
         """Test single MP3 video download."""
         mock_mp3_downloader = Mock()
         mock_mp3_downloader_class.return_value = mock_mp3_downloader
@@ -309,7 +309,7 @@ class TestBatchDownloader:
         mock_mp3_downloader.setPath.assert_called_with(folder_path)
         mock_mp3_downloader.downloadAsMp3.assert_called_once()
 
-    def test_download_single_video_invalid_format(self):
+    def testDownloadSingleVideoInvalidFormat(self):
         """Test single video download with invalid format."""
         video_info = {'url': 'https://youtube.com/watch?v=1', 'title': 'Test Video'}
         folder_path = os.path.join(self.test_base_path, 'test')
@@ -320,7 +320,7 @@ class TestBatchDownloader:
         assert "Unsupported format: AVI" in error
 
     @patch('src.BatchDownloader.Mp4Downloader')
-    def test_download_single_video_exception(self, mock_mp4_downloader_class):
+    def testDownloadSingleVideoException(self, mock_mp4_downloader_class):
         """Test single video download with exception."""
         mock_mp4_downloader = Mock()
         mock_mp4_downloader_class.return_value = mock_mp4_downloader
