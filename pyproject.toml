@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tubeharvester"
+version = "1.0.0"
+description = "A Python application for downloading YouTube videos, audio, playlists, and channels."
+requires-python = ">=3.9"
+dependencies = [
+    "yt-dlp",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+tubeharvester = "src.GUI:runGui"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json"]

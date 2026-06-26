@@ -58,7 +58,21 @@ TubeHarvester/
 sudo apt install ffmpeg  # Debian/Ubuntu
 ```
 
-### Setup Python Environment
+### Install with pip / pipx (Recommended)
+
+Install the package directly from the source directory:
+
+```bash
+pip install -e .
+```
+
+For global CLI access, install with pipx:
+
+```bash
+pipx install .
+```
+
+### Setup Python Environment (Alternative)
 ```bash
 pip install -r requirements.txt
 ```
@@ -70,6 +84,15 @@ pip install -r requirements.txt
 ```
 
 ### Run the Application
+
+After installing with pip/pipx, run the GUI from anywhere:
+
+```bash
+tubeharvester
+```
+
+Or run directly:
+
 ```bash
 python3 main.py
 ```
