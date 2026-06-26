@@ -36,103 +36,121 @@ class SingleDownloadPanel(ttk.Frame):
     def buildGui(self):
         """
         Constructs the GUI components for the single download panel.
+        Refined soft layout with generous spacing.
         """
-        # main frame for the single download panel
-        main_frame = ttk.Frame(self.master, padding="10 10 10 10")
-        main_frame.pack(expand=True, fill=tk.BOTH)
+        # Main container
+        main = ttk.Frame(self.master, padding="16 14 16 12")
+        main.pack(expand=True, fill=tk.BOTH)
 
-        # url and path frame - contains input fields for URL and download path
-        url_path_frame = ttk.LabelFrame(main_frame, text="Input", padding="10 10 10 10")
-        url_path_frame.pack(fill=tk.X, pady=5)
-        
-        # url input field configuration
-        ttk.Label(url_path_frame, text="YouTube URL:").grid(row=0, column=0, sticky="w", pady=2)
-        self.url_entry = ttk.Entry(url_path_frame, width=60)
-        self.url_entry.grid(row=0, column=1, columnspan=2, sticky="ew", pady=2)
+        # ---- URL Section ----
+        ttk.Label(main, text="VIDEO URL", style="SectionHeader.TLabel").pack(anchor="w", padx=2)
+        url_frame = ttk.Frame(main)
+        url_frame.pack(fill=tk.X, pady=(0, 10))
 
-        # download path input field with browse button
-        ttk.Label(url_path_frame, text="Download Path:").grid(row=1, column=0, sticky="w", pady=2)
-        self.path_display = ttk.Entry(url_path_frame, width=50)
-        self.path_display.grid(row=1, column=1, sticky="ew", pady=2)
-        self.browse_button = ttk.Button(url_path_frame, text="Browse", command=self.browsePath)
-        self.browse_button.grid(row=1, column=2, sticky="e", padx=5, pady=2)
-        
-        url_path_frame.columnconfigure(1, weight=1)
+        self.url_entry = ttk.Entry(url_frame)
+        self.url_entry.pack(fill=tk.X, ipady=4)
 
-        # options frame - contains format and resolution selection
-        options_frame = ttk.LabelFrame(main_frame, text="Options", padding="10 10 10 10")
-        options_frame.pack(fill=tk.X, pady=5)
+        # ---- Path Section ----
+        ttk.Label(main, text="DOWNLOAD LOCATION", style="SectionHeader.TLabel").pack(anchor="w", padx=2)
+        path_frame = ttk.Frame(main)
+        path_frame.pack(fill=tk.X, pady=(0, 12))
 
-        # format selection radio buttons (MP4/MP3)
-        ttk.Label(options_frame, text="Format:").grid(row=0, column=0, sticky="w")
+        self.path_display = ttk.Entry(path_frame)
+        self.path_display.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=3)
+        self.path_display.insert(0, self.default_download_path)
+
+        self.browse_button = ttk.Button(path_frame, text="Browse", command=self.browsePath, style="Ghost.TButton")
+        self.browse_button.pack(side=tk.RIGHT, padx=(8, 0))
+
+        # ---- Options Section ----
+        ttk.Label(main, text="OPTIONS", style="SectionHeader.TLabel").pack(anchor="w", padx=2)
+        opt_frame = ttk.Frame(main)
+        opt_frame.pack(fill=tk.X, pady=(0, 14))
+
+        # Format
+        ttk.Label(opt_frame, text="Format").grid(row=0, column=0, sticky="w", padx=(0, 12), pady=4)
+
         self.format_var = tk.StringVar(value="MP4")
-        self.mp4_radio = ttk.Radiobutton(options_frame, text="MP4", variable=self.format_var, value="MP4", command=self.updateFormatColor)
-        self.mp4_radio.grid(row=0, column=1, sticky='w', padx=5)
-        self.mp3_radio = ttk.Radiobutton(options_frame, text="MP3", variable=self.format_var, value="MP3", command=self.updateFormatColor)
-        self.mp3_radio.grid(row=0, column=2, sticky='w', padx=5)
+        fmt_row = ttk.Frame(opt_frame)
+        fmt_row.grid(row=0, column=1, sticky="w", pady=4)
 
-        # resolution selection dropdown menu
-        ttk.Label(options_frame, text="Resolution:").grid(row=1, column=0, sticky="w")
-        self.resolution_var = tk.StringVar(self.master)
-        self.resolution_menu = ttk.OptionMenu(options_frame, self.resolution_var, "Highest")
-        self.resolution_menu.grid(row=1, column=1, columnspan=2, sticky="w", pady=5)
+        self.mp4_radio = ttk.Radiobutton(fmt_row, text="MP4  (video)", variable=self.format_var,
+                                         value="MP4", command=self.updateFormatColor)
+        self.mp4_radio.pack(side=tk.LEFT, padx=(0, 14))
+        self.mp3_radio = ttk.Radiobutton(fmt_row, text="MP3  (audio)", variable=self.format_var,
+                                         value="MP3", command=self.updateFormatColor)
+        self.mp3_radio.pack(side=tk.LEFT)
 
-        # controls frame - contains the main action button
-        controls_frame = ttk.Frame(main_frame)
-        controls_frame.pack(fill=tk.X, pady=5)
-        controls_frame.columnconfigure(0, weight=1)
-        controls_frame.columnconfigure(1, weight=1)
+        # Resolution / Quality
+        ttk.Label(opt_frame, text="Quality").grid(row=1, column=0, sticky="w", padx=(0, 12), pady=4)
+        self.resolution_var = tk.StringVar(value="Highest")
+        self.resolution_menu = ttk.OptionMenu(opt_frame, self.resolution_var, "Highest")
+        self.resolution_menu.grid(row=1, column=1, sticky="w", pady=2)
 
-        # download button configuration
-        self.download_button = ttk.Button(controls_frame, text="Download", command=self.startDownload)
-        self.download_button.grid(row=0, column=0, sticky="ew", padx=(0, 5))
-        
-        # removed close button as it's redundant with the window's X button
+        opt_frame.columnconfigure(1, weight=1)
 
-        # progress and log frame - contains progress bars and status messages
-        progress_log_frame = ttk.LabelFrame(main_frame, text="Status", padding="10 10 10 10")
-        progress_log_frame.pack(expand=True, fill=tk.BOTH, pady=5)
+        # ---- Primary Action ----
+        controls = ttk.Frame(main)
+        controls.pack(fill=tk.X, pady=(4, 10))
 
-        # fetching data progress bar - shows progress when fetching video data
-        self.fetch_progress_frame = ttk.Frame(progress_log_frame)
-        self.fetch_progress_frame.pack(fill=tk.X, pady=5)
-        
-        self.fetch_label = ttk.Label(self.fetch_progress_frame, text="Fetching Data:", font=('Courier', 9, 'bold'))
-        self.fetch_label.pack(anchor='w')
-        
-        self.fetch_progress = ttk.Progressbar(self.fetch_progress_frame, orient='horizontal', length=400, mode='determinate')
-        self.fetch_progress.pack(fill=tk.X, pady=2)
-        
-        self.fetch_status_label = ttk.Label(self.fetch_progress_frame, text="", font=('Courier', 9))
-        self.fetch_status_label.pack(anchor='w')
-        
-        # hide fetch progress initially
+        self.download_button = ttk.Button(controls, text="⬇  Download", command=self.startDownload,
+                                          style="Primary.TButton")
+        self.download_button.pack(fill=tk.X, ipady=3)
+
+        # ---- Progress + Status ----
+        status_wrap = ttk.Frame(main)
+        status_wrap.pack(expand=True, fill=tk.BOTH, pady=(4, 0))
+
+        # Fetch progress (hidden by default)
+        self.fetch_progress_frame = ttk.Frame(status_wrap)
+        ttk.Label(self.fetch_progress_frame, text="Fetching metadata…", style="Muted.TLabel").pack(anchor="w")
+        self.fetch_progress = ttk.Progressbar(self.fetch_progress_frame, mode='determinate', length=300)
+        self.fetch_progress.pack(fill=tk.X, pady=(3, 2))
+        self.fetch_status_label = ttk.Label(self.fetch_progress_frame, text="", style="Muted.TLabel")
+        self.fetch_status_label.pack(anchor="w")
         self.fetch_progress_frame.pack_forget()
 
-        # download progress bar - shows progress during the actual download
-        self.download_progress_frame = ttk.Frame(progress_log_frame)
-        self.download_progress_frame.pack(fill=tk.X, pady=5)
-        
-        self.download_label = ttk.Label(self.download_progress_frame, text="Download Progress:", font=('Courier', 9, 'bold'))
-        self.download_label.pack(anchor='w')
-        
-        self.progress = ttk.Progressbar(self.download_progress_frame, orient='horizontal', length=40, mode='determinate')
-        self.progress.pack(fill=tk.X, pady=2)
-        
-        # hide download progress initially
+        # Download progress (hidden by default)
+        self.download_progress_frame = ttk.Frame(status_wrap)
+        self.download_label = ttk.Label(self.download_progress_frame, text="Downloading", style="Muted.TLabel")
+        self.download_label.pack(anchor="w")
+        self.progress = ttk.Progressbar(self.download_progress_frame, mode='determinate', length=300)
+        self.progress.pack(fill=tk.X, pady=(3, 2))
         self.download_progress_frame.pack_forget()
 
-        # message log display area - shows status messages and errors
-        self.message_screen = Text(progress_log_frame, height=10, width=75, font=('Courier', 9), 
-                                   fg=self.colors["FOREGROUND_COLOR"], bg=self.colors["SECONDARY_BACKGROUND_COLOR"], insertbackground=self.colors["ACCENT_COLOR"],
-                                   borderwidth=0, highlightthickness=1, highlightbackground=self.colors["ACCENT_COLOR"],
-                                   selectbackground=self.colors["ACCENT_COLOR_DARK"], selectforeground=self.colors["FOREGROUND_COLOR"])
-        self.message_screen.pack(expand=True, fill=tk.BOTH, pady=5)
+        # Refined console log
+        log_header = ttk.Label(status_wrap, text="STATUS LOG", style="SectionHeader.TLabel")
+        log_header.pack(anchor="w", pady=(8, 2))
+
+        self.message_screen = Text(
+            status_wrap,
+            height=11,
+            font=('Menlo', 9) if self._is_macos() else ('Consolas', 9) if os.name == 'nt' else ('DejaVu Sans Mono', 9),
+            bg=self.colors["BG_SECONDARY"],
+            fg=self.colors["FG"],
+            insertbackground=self.colors["ACCENT"],
+            borderwidth=1,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=self.colors["BORDER"],
+            selectbackground=self.colors["ACCENT"],
+            selectforeground="#1C1C20",
+            padx=10,
+            pady=8
+        )
+        self.message_screen.pack(expand=True, fill=tk.BOTH)
         self.message_screen.config(state=tk.DISABLED)
+
+        # Setup text tags for colored output (snappier feedback)
+        self._setup_log_tags()
 
         self.updateFormatColor()
         self.last_checked_url = ""
-        self.master.after(1000, self.autoFetchResolutions)
+        self.master.after(900, self.autoFetchResolutions)
+
+    def _is_macos(self):
+        import platform
+        return platform.system() == "Darwin"
 
     def autoFetchResolutions(self):
         """
@@ -142,7 +160,7 @@ class SingleDownloadPanel(ttk.Frame):
         if current_url and current_url != self.last_checked_url:
             self.last_checked_url = current_url
             threading.Thread(target=self.fetchResolutions, daemon=True).start()
-        self.master.after(1000, self.autoFetchResolutions)
+        self.master.after(900, self.autoFetchResolutions)
 
     def browsePath(self):
         """
@@ -156,16 +174,21 @@ class SingleDownloadPanel(ttk.Frame):
     def fetchResolutions(self):
         """
         Fetches available resolutions for the current YouTube URL.
+        Shows inline fetching state.
         """
         url = self.last_checked_url
         if not url:
             return
 
+        self.fetch_progress_frame.pack(fill=tk.X, pady=(4, 6))
+        self.fetch_progress['value'] = 15
+        self.fetch_status_label.config(text="Contacting YouTube…")
+        self.fetch_progress.update()
+
         try:
             downloader = Mp4Downloader(log_callback=self.logMessage)
             downloader.setUrl(url)
             
-            # Use options to get all available formats for resolution selection
             opts = {
                 'noplaylist': True, 
                 'quiet': True,
@@ -182,37 +205,41 @@ class SingleDownloadPanel(ttk.Frame):
                 opts['cookiefile'] = cookie_file
             
             import yt_dlp
+            self.fetch_progress['value'] = 45
+            self.fetch_status_label.config(text="Parsing formats…")
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(url, download=False)
             
             formats = info.get('formats', [])
             
-            # Get all available resolutions from video formats
             video_formats = [f for f in formats if f.get('height') and f.get('vcodec') != 'none']
             resolutions = sorted(list(set([f['height'] for f in video_formats])), reverse=True)
             
-            # Also include audio-only formats if available
             audio_formats = [f for f in formats if f.get('vcodec') == 'none' and f.get('acodec') != 'none']
             if audio_formats:
                 resolutions.append('Audio Only')
             
             if not resolutions:
-                messagebox.showinfo("Info", "No video resolutions found.")
+                self.logMessage("No video resolutions found.")
+                self.fetch_progress_frame.pack_forget()
                 return
 
-            self.resolution_var.set(resolutions[0])
+            self.resolution_var.set(resolutions[0] if isinstance(resolutions[0], str) else f"{resolutions[0]}")
             menu = self.resolution_menu['menu']
             menu.delete(0, 'end')
             for res in resolutions:
-                if res == 'Audio Only':
-                    menu.add_command(label=f"{res}", command=lambda value=res: self.resolution_var.set(value))
-                else:
-                    menu.add_command(label=f"{res}p", command=lambda value=res: self.resolution_var.set(value))
+                label = f"{res}" if res == 'Audio Only' else f"{res}p"
+                val = res
+                menu.add_command(label=label, command=lambda v=val: self.resolution_var.set(v))
             
-            self.logMessage(f"Resolutions fetched successfully: {', '.join(map(str, resolutions))}")
+            self.fetch_progress['value'] = 100
+            self.fetch_status_label.config(text="Done")
+            self.master.after(450, self.fetch_progress_frame.pack_forget)
+            self.logMessage(f"Resolutions fetched: {', '.join(map(str, resolutions))}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to fetch resolutions: {e}")
+            self.logMessage(f"Resolution fetch error: {e}")
+            self.fetch_progress_frame.pack_forget()
 
     def startDownload(self):
         """
@@ -220,6 +247,7 @@ class SingleDownloadPanel(ttk.Frame):
         """
         self.progress['value'] = 0
         self.progress.update()
+        self.download_progress_frame.pack(fill=tk.X, pady=(6, 2))
 
         url = self.url_entry.get()
         path = self.path_display.get() or self.default_download_path
@@ -228,11 +256,15 @@ class SingleDownloadPanel(ttk.Frame):
             resolution = self.resolution_var.get()
             if not resolution:
                 messagebox.showerror("Error", "Please fetch and select a resolution.")
+                self.download_progress_frame.pack_forget()
                 return
             self.downloader = Mp4Downloader(self.updateProgress, self.logMessage)
             self.downloader.setUrl(url)
             self.downloader.setPath(path)
-            self.downloader.resolution = int(resolution)
+            try:
+                self.downloader.resolution = int(resolution)
+            except (ValueError, TypeError):
+                self.downloader.resolution = 0  # let downloader pick best
             download_thread = threading.Thread(target=self.downloader.downloadVideo)
         elif self.format_var.get() == "MP3":
             self.downloader = Mp3Downloader(url, path, self.updateProgress, self.logMessage)
@@ -248,27 +280,41 @@ class SingleDownloadPanel(ttk.Frame):
         """
         self.progress['value'] = percentage
         self.progress.update()
-        if percentage == 100:
-            self.master.after(3000, self.clearProgressBar)
+        if percentage >= 100:
+            self.master.after(2600, self.clearProgressBar)
 
     def clearProgressBar(self):
         """
-        Resets the progress bar to zero.
+        Resets the progress bar to zero and hides container.
         """
         self.progress['value'] = 0
         self.progress.update()
+        self.download_progress_frame.pack_forget()
 
     def logMessage(self, message):
         """
         Appends a message to the status display area.
-
-        Args:
-            message (str): The message to log.
+        Uses color tags when possible for better visual feedback.
         """
         self.message_screen.config(state=tk.NORMAL)
-        self.message_screen.insert(tk.END, message + "\n")
+
+        tag = "info"
+        lower = message.lower()
+        if any(x in lower for x in ["error", "fail", "exception", "could not"]):
+            tag = "error"
+        elif any(x in lower for x in ["success", "complete", "downloaded", "finished", "100%"]):
+            tag = "success"
+
+        self.message_screen.insert(tk.END, message + "\n", tag)
         self.message_screen.see(tk.END)
         self.message_screen.config(state=tk.DISABLED)
+
+    def _setup_log_tags(self):
+        """Configure colored tags for the log Text widget."""
+        c = self.colors
+        self.message_screen.tag_config("info", foreground=c["FG"])
+        self.message_screen.tag_config("success", foreground=c["SUCCESS"])
+        self.message_screen.tag_config("error", foreground=c["ERROR"])
 
     def updateFormatColor(self):
         """
@@ -302,116 +348,134 @@ class BatchDownloadPanel(ttk.Frame):
     def buildGui(self):
         """
         Constructs the GUI components for the batch download panel.
+        Cleaner layout, more breathing room, refined controls.
         """
-        # Main frame
-        main_frame = ttk.Frame(self, padding="10 10 10 10")
-        main_frame.pack(expand=True, fill=tk.BOTH)
+        main = ttk.Frame(self, padding="16 14 16 12")
+        main.pack(expand=True, fill=tk.BOTH)
 
-        # URL and Path Frame
-        url_path_frame = ttk.LabelFrame(main_frame, text="Input", padding="10 10 10 10")
-        url_path_frame.pack(fill=tk.X, pady=5)
+        # URL
+        ttk.Label(main, text="PLAYLIST OR CHANNEL URL", style="SectionHeader.TLabel").pack(anchor="w", padx=2)
+        url_frame = ttk.Frame(main)
+        url_frame.pack(fill=tk.X, pady=(0, 10))
+        self.url_entry = ttk.Entry(url_frame)
+        self.url_entry.pack(fill=tk.X, ipady=4)
 
-        ttk.Label(url_path_frame, text="Playlist/Channel URL:").grid(row=0, column=0, sticky="w", pady=2)
-        self.url_entry = ttk.Entry(url_path_frame, width=60)
-        self.url_entry.grid(row=0, column=1, columnspan=2, sticky="ew", pady=2)
+        # Base path
+        ttk.Label(main, text="SAVE TO", style="SectionHeader.TLabel").pack(anchor="w", padx=2)
+        path_frame = ttk.Frame(main)
+        path_frame.pack(fill=tk.X, pady=(0, 12))
+        self.path_display = ttk.Entry(path_frame)
+        self.path_display.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=3)
+        self.path_display.insert(0, str(Path.home() / "Downloads"))
+        self.browse_button = ttk.Button(path_frame, text="Browse", command=self.browsePath, style="Ghost.TButton")
+        self.browse_button.pack(side=tk.RIGHT, padx=(8, 0))
 
-        ttk.Label(url_path_frame, text="Base Path:").grid(row=1, column=0, sticky="w", pady=2)
-        self.path_display = ttk.Entry(url_path_frame, width=50)
-        self.path_display.grid(row=1, column=1, sticky="ew", pady=2)
-        self.browse_button = ttk.Button(url_path_frame, text="Browse", command=self.browsePath)
-        self.browse_button.grid(row=1, column=2, sticky="e", padx=5, pady=2)
+        # Options
+        ttk.Label(main, text="OPTIONS", style="SectionHeader.TLabel").pack(anchor="w", padx=2)
+        opt = ttk.Frame(main)
+        opt.pack(fill=tk.X, pady=(2, 10))
 
-        url_path_frame.columnconfigure(1, weight=1)
-
-        # Options Frame
-        options_frame = ttk.LabelFrame(main_frame, text="Options", padding="10 10 10 10")
-        options_frame.pack(fill=tk.X, pady=5)
-
-        ttk.Label(options_frame, text="Format:").grid(row=0, column=0, sticky="w")
+        # Row 0: Format
+        ttk.Label(opt, text="Format").grid(row=0, column=0, sticky="w", padx=(0, 10), pady=3)
         self.format_var = tk.StringVar(value="MP4")
-        self.mp4_radio = ttk.Radiobutton(options_frame, text="MP4", variable=self.format_var, value="MP4", command=self.updateFormatColor)
-        self.mp4_radio.grid(row=0, column=1, sticky='w', padx=5)
-        self.mp3_radio = ttk.Radiobutton(options_frame, text="MP3", variable=self.format_var, value="MP3", command=self.updateFormatColor)
-        self.mp3_radio.grid(row=0, column=2, sticky='w', padx=5)
+        fr = ttk.Frame(opt)
+        fr.grid(row=0, column=1, sticky="w")
+        self.mp4_radio = ttk.Radiobutton(fr, text="MP4", variable=self.format_var, value="MP4", command=self.updateFormatColor)
+        self.mp4_radio.pack(side=tk.LEFT, padx=(0, 10))
+        self.mp3_radio = ttk.Radiobutton(fr, text="MP3", variable=self.format_var, value="MP3", command=self.updateFormatColor)
+        self.mp3_radio.pack(side=tk.LEFT)
 
-        ttk.Label(options_frame, text="Quality:").grid(row=1, column=0, sticky="w")
+        # Quality
+        ttk.Label(opt, text="Quality").grid(row=1, column=0, sticky="w", padx=(0, 10), pady=3)
         self.quality_var = tk.StringVar(value="Highest")
-        self.quality_menu = ttk.OptionMenu(options_frame, self.quality_var, "Highest")
-        self.quality_menu.grid(row=1, column=1, sticky="w", pady=5)
+        self.quality_menu = ttk.OptionMenu(opt, self.quality_var, "Highest")
+        self.quality_menu.grid(row=1, column=1, sticky="w", pady=1)
         self.populateQualityMenu()
 
-        ttk.Label(options_frame, text="Max Videos:").grid(row=2, column=0, sticky="w")
+        # Max videos
+        ttk.Label(opt, text="Max Videos").grid(row=2, column=0, sticky="w", padx=(0, 10), pady=3)
         self.max_videos_var = tk.StringVar(value="200")
-        self.max_videos_entry = ttk.Entry(options_frame, textvariable=self.max_videos_var, width=10)
-        self.max_videos_entry.grid(row=2, column=1, sticky="w", pady=5)
+        self.max_videos_entry = ttk.Entry(opt, textvariable=self.max_videos_var, width=9)
+        self.max_videos_entry.grid(row=2, column=1, sticky="w")
 
-        ttk.Label(options_frame, text="Mode:").grid(row=3, column=0, sticky="w")
+        # Mode
+        ttk.Label(opt, text="Mode").grid(row=3, column=0, sticky="w", padx=(0, 10), pady=3)
+        mr = ttk.Frame(opt)
+        mr.grid(row=3, column=1, sticky="w")
         self.mode_var = tk.StringVar(value="Playlist Download")
-        self.playlist_radio = ttk.Radiobutton(options_frame, text="Playlist Download", variable=self.mode_var, value="Playlist Download")
-        self.playlist_radio.grid(row=3, column=1, sticky='w', padx=5)
-        self.profile_radio = ttk.Radiobutton(options_frame, text="Profile Scrape", variable=self.mode_var, value="Profile Scrape")
-        self.profile_radio.grid(row=3, column=2, sticky='w', padx=5)
+        ttk.Radiobutton(mr, text="Playlist Download", variable=self.mode_var, value="Playlist Download").pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Radiobutton(mr, text="Profile Scrape", variable=self.mode_var, value="Profile Scrape").pack(side=tk.LEFT)
 
-        # Add trace to update Max Videos field when mode changes
+        # Trace for mode
         self.mode_var.trace_add("write", self.updateMaxVideosDisplay)
 
-        # Controls Frame
-        controls_frame = ttk.Frame(main_frame)
-        controls_frame.pack(fill=tk.X, pady=5)
-        controls_frame.columnconfigure(0, weight=1)
-        controls_frame.columnconfigure(1, weight=1)
+        # Action buttons
+        btn_row = ttk.Frame(main)
+        btn_row.pack(fill=tk.X, pady=(6, 8))
+        btn_row.columnconfigure(0, weight=3)
+        btn_row.columnconfigure(1, weight=1)
 
-        self.download_button = ttk.Button(controls_frame, text="Start Batch Download", command=self.startBatchDownload)
-        self.download_button.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        self.download_button = ttk.Button(btn_row, text="▶  Start Batch Download", command=self.startBatchDownload, style="Primary.TButton")
+        self.download_button.grid(row=0, column=0, sticky="ew", padx=(0, 6), ipady=2)
 
-        self.cancel_button = ttk.Button(controls_frame, text="Cancel", command=self.cancelDownload, state=tk.DISABLED)
-        self.cancel_button.grid(row=0, column=1, sticky="ew", padx=(5, 0))
+        self.cancel_button = ttk.Button(btn_row, text="Cancel", command=self.cancelDownload, state=tk.DISABLED, style="Ghost.TButton")
+        self.cancel_button.grid(row=0, column=1, sticky="ew")
 
-        # Fetching Data Progress Bar
-        self.fetch_progress_frame = ttk.Frame(controls_frame)
-        self.fetch_progress_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=5)
-        
-        self.fetch_label = ttk.Label(self.fetch_progress_frame, text="Fetching Data:", font=('Courier', 9, 'bold'))
-        self.fetch_label.pack(anchor='w')
-        
-        self.fetch_progress = ttk.Progressbar(self.fetch_progress_frame, orient='horizontal', length=400, mode='determinate')
+        # Progress containers
+        prog_wrap = ttk.Frame(main)
+        prog_wrap.pack(fill=tk.X, pady=(2, 4))
+
+        self.fetch_progress_frame = ttk.Frame(prog_wrap)
+        ttk.Label(self.fetch_progress_frame, text="Fetching list…", style="Muted.TLabel").pack(anchor="w")
+        self.fetch_progress = ttk.Progressbar(self.fetch_progress_frame, mode='determinate')
         self.fetch_progress.pack(fill=tk.X, pady=2)
-        
-        self.fetch_status_label = ttk.Label(self.fetch_progress_frame, text="", font=('Courier', 9))
-        self.fetch_status_label.pack(anchor='w')
-        
-        # Hide fetch progress initially
-        self.fetch_progress_frame.grid_remove()
+        self.fetch_status_label = ttk.Label(self.fetch_progress_frame, text="", style="Muted.TLabel")
+        self.fetch_status_label.pack(anchor="w")
+        self.fetch_progress_frame.pack_forget()
 
-        # Download Progress Bar
-        self.download_progress_frame = ttk.Frame(controls_frame) # Change parent to controls_frame
-        self.download_progress_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=5) # Use grid for placement
-        
-        self.download_label = ttk.Label(self.download_progress_frame, text="Download Progress:", font=('Courier', 9, 'bold'))
-        self.download_label.pack(anchor='w')
-        
-        self.progress = ttk.Progressbar(self.download_progress_frame, orient='horizontal', length=400, mode='determinate')
+        self.download_progress_frame = ttk.Frame(prog_wrap)
+        ttk.Label(self.download_progress_frame, text="Batch progress", style="Muted.TLabel").pack(anchor="w")
+        self.progress = ttk.Progressbar(self.download_progress_frame, mode='determinate')
         self.progress.pack(fill=tk.X, pady=2)
-        
-        # Hide download progress initially
-        self.download_progress_frame.grid_remove() # Use grid_remove instead of pack_forget
+        self.download_progress_frame.pack_forget()
 
-        # Progress and Log Frame (now only contains message_screen)
-        progress_log_frame = ttk.LabelFrame(main_frame, text="Status", padding="10 10 10 10")
-        progress_log_frame.pack(expand=True, fill=tk.BOTH, pady=5)
-
-        self.message_screen = Text(progress_log_frame, height=10, width=75, font=('Courier', 9), 
-                                   fg=self.colors["FOREGROUND_COLOR"], bg=self.colors["SECONDARY_BACKGROUND_COLOR"], insertbackground=self.colors["ACCENT_COLOR"],
-                                   borderwidth=0, highlightthickness=1, highlightbackground=self.colors["ACCENT_COLOR"],
-                                   selectbackground=self.colors["ACCENT_COLOR_DARK"], selectforeground=self.colors["FOREGROUND_COLOR"])
-        self.message_screen.pack(expand=True, fill=tk.BOTH, pady=5)
+        # Status log
+        ttk.Label(main, text="STATUS LOG", style="SectionHeader.TLabel").pack(anchor="w", pady=(8, 2))
+        self.message_screen = Text(
+            main,
+            height=11,
+            font=('Menlo', 9) if self._is_macos() else ('Consolas', 9) if os.name == 'nt' else ('DejaVu Sans Mono', 9),
+            bg=self.colors["BG_SECONDARY"],
+            fg=self.colors["FG"],
+            insertbackground=self.colors["ACCENT"],
+            borderwidth=1,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=self.colors["BORDER"],
+            selectbackground=self.colors["ACCENT"],
+            selectforeground="#1C1C20",
+            padx=10,
+            pady=8
+        )
+        self.message_screen.pack(expand=True, fill=tk.BOTH)
         self.message_screen.config(state=tk.DISABLED)
 
-        self.message_screen.config(state=tk.DISABLED)
+        self._setup_log_tags()
 
         self.updateFormatColor()
         self.last_checked_url = ""
-        self.master.after(1000, self.autoFetchResolutions)
+        self.master.after(900, self.autoFetchResolutions)
+
+    def _is_macos(self):
+        import platform
+        return platform.system() == "Darwin"
+
+    def _setup_log_tags(self):
+        """Configure colored tags for the log Text widget."""
+        c = self.colors
+        self.message_screen.tag_config("info", foreground=c["FG"])
+        self.message_screen.tag_config("success", foreground=c["SUCCESS"])
+        self.message_screen.tag_config("error", foreground=c["ERROR"])
 
     def autoFetchResolutions(self):
         """
@@ -421,7 +485,7 @@ class BatchDownloadPanel(ttk.Frame):
         if current_url and current_url != self.last_checked_url:
             self.last_checked_url = current_url
             threading.Thread(target=self.fetchResolutions, daemon=True).start()
-        self.master.after(1000, self.autoFetchResolutions)
+        self.master.after(900, self.autoFetchResolutions)
 
     def browsePath(self):
         """
@@ -439,6 +503,11 @@ class BatchDownloadPanel(ttk.Frame):
         url = self.last_checked_url
         if not url:
             return
+
+        self.fetch_progress_frame.pack(fill=tk.X, pady=(2, 4))
+        self.fetch_progress['value'] = 20
+        self.fetch_status_label.config(text="Scanning source…")
+        self.fetch_progress.update()
 
         try:
             from .Mp4_Converter import Mp4Downloader
@@ -460,7 +529,6 @@ class BatchDownloadPanel(ttk.Frame):
             if cookie_file:
                 opts['cookiefile'] = cookie_file
             
-            # For playlists, get first video URL to check formats
             fetch_url = url
             if 'list=' in url:
                 with yt_dlp.YoutubeDL({'extract_flat': True, 'quiet': True}) as ydl:
@@ -470,6 +538,7 @@ class BatchDownloadPanel(ttk.Frame):
                         if first_entry:
                             fetch_url = f"https://www.youtube.com/watch?v={first_entry.get('id', '')}"
             
+            self.fetch_progress['value'] = 55
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(fetch_url, download=False)
             
@@ -478,20 +547,24 @@ class BatchDownloadPanel(ttk.Frame):
             resolutions = sorted(list(set([f['height'] for f in video_formats])), reverse=True)
             
             if not resolutions:
-                self.logMessage("No video resolutions found. Using preset values.")
+                self.logMessage("No resolutions detected. Using defaults.")
+                self.fetch_progress_frame.pack_forget()
                 return
 
-            # Update quality menu with actual resolutions
             menu = self.quality_menu["menu"]
             menu.delete(0, "end")
             menu.add_command(label="Highest", command=lambda: self.quality_var.set("Highest"))
             for res in resolutions:
-                menu.add_command(label=f"{res}p", command=lambda value=f"{res}p": self.quality_var.set(value))
+                menu.add_command(label=f"{res}p", command=lambda v=f"{res}p": self.quality_var.set(v))
             
-            self.logMessage(f"Resolutions fetched: {', '.join([f'{r}p' for r in resolutions])}")
+            self.fetch_progress['value'] = 100
+            self.fetch_status_label.config(text="Updated")
+            self.master.after(420, self.fetch_progress_frame.pack_forget)
+            self.logMessage(f"Resolutions: {', '.join([f'{r}p' for r in resolutions])}")
 
         except Exception as e:
             self.logMessage(f"Could not fetch resolutions: {e}")
+            self.fetch_progress_frame.pack_forget()
 
     def updateFormatColor(self):
         """
@@ -552,6 +625,7 @@ class BatchDownloadPanel(ttk.Frame):
         self.download_button.config(state=tk.DISABLED)
         self.cancel_button.config(state=tk.NORMAL)
         self.progress['value'] = 0
+        self.download_progress_frame.pack(fill=tk.X, pady=(2, 4))
 
         download_thread = threading.Thread(
             target=self.executeBatchDownload,
@@ -583,7 +657,7 @@ class BatchDownloadPanel(ttk.Frame):
         """
         try:
             self.batch_downloader = None
-            self.fetch_progress_frame.grid()
+            self.fetch_progress_frame.pack(fill=tk.X, pady=(2, 4))
             self.fetch_progress['value'] = 0
             self.fetch_status_label.config(text="")
 
@@ -646,8 +720,8 @@ class BatchDownloadPanel(ttk.Frame):
                         'folder': f"{channel_name}/Random"
                     })
 
-            self.fetch_progress_frame.grid_remove()
-            self.download_progress_frame.grid()
+            self.fetch_progress_frame.pack_forget()
+            self.download_progress_frame.pack(fill=tk.X, pady=(2, 4))
             self.logMessage("Data fetching complete. Starting downloads...")
 
             self.batch_downloader = BatchDownloader(
@@ -672,8 +746,8 @@ class BatchDownloadPanel(ttk.Frame):
             self.logMessage(f"Error during batch download: {str(e)}")
 
         finally:
-            self.fetch_progress_frame.grid_remove()
-            self.download_progress_frame.grid_remove()
+            self.fetch_progress_frame.pack_forget()
+            self.download_progress_frame.pack_forget()
             self.download_button.config(state=tk.NORMAL)
             self.cancel_button.config(state=tk.DISABLED)
             self.batch_downloader = None
@@ -681,18 +755,9 @@ class BatchDownloadPanel(ttk.Frame):
     def updateFetchProgress(self, current, total, percentage):
         """
         Updates the UI for data fetching progress.
-
-        Args:
-            current (int): Current item index.
-            total (int): Total items.
-            percentage (int): Percentage complete.
         """
-        self.fetch_progress['value'] = percentage
-        bar_width = 20
-        filled = int((percentage / 100) * bar_width)
-        bar = '=' * filled + '>' + ' ' * (bar_width - filled - 1)
-        status_text = f"[{bar}] {percentage}% ({current}/{total} items)"
-        self.fetch_status_label.config(text=status_text)
+        self.fetch_progress['value'] = max(0, min(100, percentage))
+        self.fetch_status_label.config(text=f"{current} / {total}  •  {percentage}%")
         self.fetch_progress.update()
         self.fetch_status_label.update()
 
@@ -705,16 +770,23 @@ class BatchDownloadPanel(ttk.Frame):
         """
         self.progress['value'] = percentage
         self.progress.update()
+        if percentage >= 100:
+            self.master.after(1800, lambda: self.download_progress_frame.pack_forget())
 
     def logMessage(self, message):
         """
-        Logs a message to the status display.
-
-        Args:
-            message (str): The message to log.
+        Logs a message to the status display with colored tags.
         """
         self.message_screen.config(state=tk.NORMAL)
-        self.message_screen.insert(tk.END, message + "\n")
+
+        tag = "info"
+        lower = message.lower()
+        if any(x in lower for x in ["error", "fail", "exception", "could not"]):
+            tag = "error"
+        elif any(x in lower for x in ["success", "complete", "downloaded", "finished", "100%", "done"]):
+            tag = "success"
+
+        self.message_screen.insert(tk.END, message + "\n", tag)
         self.message_screen.see(tk.END)
         self.message_screen.config(state=tk.DISABLED)
 
@@ -726,24 +798,10 @@ class BatchDownloadPanel(ttk.Frame):
         home_dir = os.path.expanduser('~')
         
         info_lines = [
-            "=" * 60,
-            "TubeHarvester - Batch Download Configuration",
-            "=" * 60,
+            "— TubeHarvester Batch —",
             f"System: {platform.system()} {platform.release()}",
-            f"Home Directory: {home_dir}",
-            "",
-            "Default Settings:",
-            f"  Format: {self.format_var.get()}",
-            f"  Quality: {self.quality_var.get()}",
-            f"  Max Videos: {self.max_videos_var.get()}",
-            f"  Mode: {self.mode_var.get()}",
-            "",
-            "Output Structure:",
-            "  MP3: ~/Music/<Source>/<Playlist or Random>/",
-            "  MP4: ~/Videos/<Source>/<Playlist or Random>/",
-            "",
-            "Ready for download.",
-            "=" * 60,
+            f"Defaults → {self.format_var.get()} • {self.quality_var.get()} • max {self.max_videos_var.get()} • {self.mode_var.get()}",
+            "Ready. Paste a playlist or channel URL above.",
             ""
         ]
         
@@ -767,136 +825,215 @@ class YouTubeDownloaderGUI:
         """
         self.master = master
         self.master.title('TubeHarvester - YouTube Downloader')
-        self.master.geometry("750x750")
+        self.master.geometry("820x820")
+        self.master.minsize(720, 680)
         self.master.resizable(True, True)
 
-        # GitHub Dark Dimmed color palette
+        # Claude-inspired soft dark theme with warm orange accents
         self.colors = {
-            "BACKGROUND_COLOR": "#22272e",
-            "SECONDARY_BACKGROUND_COLOR": "#2d333b",
-            "TERTIARY_BACKGROUND_COLOR": "#323842",
-            "FOREGROUND_COLOR": "#adbac7",
-            "TEXT_SECONDARY_COLOR": "#768390",
-            "ACCENT_COLOR": "#58a6ff",
-            "ACCENT_COLOR_DARK": "#4883c8",
-            "BORDER_COLOR": "#444c56",
-            "TEXT_INACTIVE_COLOR": "#768390",
+            "BG": "#1C1C20",
+            "BG_SECONDARY": "#252529",
+            "BG_TERTIARY": "#2F2F34",
+            "BG_INPUT": "#2D2D31",
+            "FG": "#EDEDEF",
+            "FG_SECONDARY": "#A1A1A7",
+            "FG_MUTED": "#6E6E75",
+            "ACCENT": "#FF7A3D",
+            "ACCENT_HOVER": "#FF955F",
+            "ACCENT_PRESSED": "#E86A2F",
+            "BORDER": "#3A3A3F",
+            "SUCCESS": "#22C55E",
+            "ERROR": "#F87171",
         }
 
         # Set dark background for root window
-        self.master.configure(bg=self.colors["BACKGROUND_COLOR"])
+        self.master.configure(bg=self.colors["BG"])
 
-        # Style configuration
+        # Style configuration - soft dark Claude-inspired + orange
         style = ttk.Style(self.master)
         style.theme_use('clam')
 
-        # Configure Notebook (tabs)
+        # Root / general
+        style.configure(".",
+                        background=self.colors["BG"],
+                        foreground=self.colors["FG"],
+                        font=('Helvetica', 10))
+
+        # Notebook / Tabs - clean modern look
         style.configure("TNotebook",
-                        background=self.colors["BACKGROUND_COLOR"],
+                        background=self.colors["BG"],
                         borderwidth=0,
                         tabmargins=[0, 0, 0, 0])
 
-        # Tab styling
         style.configure("TNotebook.Tab",
-                        background=self.colors["SECONDARY_BACKGROUND_COLOR"],
-                        foreground=self.colors["TEXT_INACTIVE_COLOR"],
+                        background=self.colors["BG_SECONDARY"],
+                        foreground=self.colors["FG_MUTED"],
                         borderwidth=0,
-                        padding=[30, 12],
-                        font=('Helvetica', 10, 'normal'))
+                        padding=[28, 11],
+                        font=('Helvetica', 10))
 
         style.map("TNotebook.Tab",
-                  background=[("selected", self.colors["TERTIARY_BACKGROUND_COLOR"]), ("!selected", self.colors["SECONDARY_BACKGROUND_COLOR"])],
-                  foreground=[("selected", self.colors["ACCENT_COLOR"]), ("!selected", self.colors["TEXT_INACTIVE_COLOR"])],
-                  expand=[("selected", [0, 0, 0, 0])],
-                  padding=[("selected", [30, 12]), ("!selected", [30, 12])])
+                  background=[
+                      ("selected", self.colors["BG_TERTIARY"]),
+                      ("!selected", self.colors["BG_SECONDARY"])
+                  ],
+                  foreground=[
+                      ("selected", self.colors["ACCENT"]),
+                      ("!selected", self.colors["FG_MUTED"])
+                  ],
+                  padding=[("selected", [28, 11]), ("!selected", [28, 11])])
 
-        # Frame styling
-        style.configure("TFrame", background=self.colors["BACKGROUND_COLOR"], borderwidth=0)
+        # Frames
+        style.configure("TFrame", background=self.colors["BG"], borderwidth=0)
 
-        # LabelFrame styling
-        style.configure("TLabelframe",
-                        background=self.colors["BACKGROUND_COLOR"],
-                        bordercolor=self.colors["ACCENT_COLOR"],
-                        borderwidth=1,
-                        relief='solid')
-        style.configure("TLabelframe.Label",
-                        background=self.colors["BACKGROUND_COLOR"],
-                        foreground=self.colors["ACCENT_COLOR"],
-                        font=('Helvetica', 10, 'bold'))
+        # Section header labels (used instead of heavy LabelFrames for refinement)
+        style.configure("SectionHeader.TLabel",
+                        background=self.colors["BG"],
+                        foreground=self.colors["ACCENT"],
+                        font=('Helvetica', 10, 'bold'),
+                        padding=(0, 6, 0, 4))
 
-        # Label styling
+        # Regular labels
         style.configure("TLabel",
-                        background=self.colors["BACKGROUND_COLOR"],
-                        foreground=self.colors["FOREGROUND_COLOR"],
-                        padding=6,
+                        background=self.colors["BG"],
+                        foreground=self.colors["FG"],
+                        padding=4,
                         font=('Helvetica', 10))
 
-        # Entry styling
-        style.configure("TEntry",
-                        fieldbackground=self.colors["SECONDARY_BACKGROUND_COLOR"],
-                        foreground=self.colors["FOREGROUND_COLOR"],
-                        bordercolor=self.colors["BORDER_COLOR"],
-                        lightcolor=self.colors["BORDER_COLOR"],
-                        darkcolor=self.colors["BORDER_COLOR"],
-                        borderwidth=1,
-                        insertcolor=self.colors["ACCENT_COLOR"])
-        style.map("TEntry",
-                  fieldbackground=[("focus", self.colors["TERTIARY_BACKGROUND_COLOR"])],
-                  bordercolor=[("focus", self.colors["ACCENT_COLOR"])])
+        style.configure("Muted.TLabel",
+                        background=self.colors["BG"],
+                        foreground=self.colors["FG_MUTED"],
+                        font=('Helvetica', 9))
 
-        # Button styling
-        style.configure("TButton",
-                        background=self.colors["SECONDARY_BACKGROUND_COLOR"],
-                        foreground=self.colors["FOREGROUND_COLOR"],
-                        bordercolor=self.colors["ACCENT_COLOR"],
-                        lightcolor=self.colors["ACCENT_COLOR"],
-                        darkcolor=self.colors["ACCENT_COLOR"],
+        # Entry fields - soft and focused with orange ring
+        style.configure("TEntry",
+                        fieldbackground=self.colors["BG_INPUT"],
+                        foreground=self.colors["FG"],
+                        bordercolor=self.colors["BORDER"],
+                        lightcolor=self.colors["BORDER"],
+                        darkcolor=self.colors["BORDER"],
                         borderwidth=1,
-                        padding=6,
+                        insertcolor=self.colors["ACCENT"],
+                        padding=8,
+                        font=('Helvetica', 10))
+        style.map("TEntry",
+                  fieldbackground=[("focus", self.colors["BG_TERTIARY"])],
+                  bordercolor=[("focus", self.colors["ACCENT"])])
+
+        # Buttons - secondary by default
+        style.configure("TButton",
+                        background=self.colors["BG_SECONDARY"],
+                        foreground=self.colors["FG"],
+                        bordercolor=self.colors["BORDER"],
+                        borderwidth=1,
+                        padding=(14, 8),
                         font=('Helvetica', 10))
         style.map("TButton",
-                  background=[("active", self.colors["TERTIARY_BACKGROUND_COLOR"]), ("pressed", self.colors["ACCENT_COLOR_DARK"])],
-                  foreground=[("active", self.colors["ACCENT_COLOR"])],
-                  bordercolor=[("focus", self.colors["ACCENT_COLOR"])])
+                  background=[
+                      ("active", self.colors["BG_TERTIARY"]),
+                      ("pressed", self.colors["BG_TERTIARY"])
+                  ],
+                  foreground=[("active", self.colors["ACCENT"])])
 
-        # Radiobutton styling
-        style.configure("TRadiobutton",
-                        background=self.colors["BACKGROUND_COLOR"],
-                        foreground=self.colors["FOREGROUND_COLOR"],
-                        bordercolor=self.colors["BORDER_COLOR"],
-                        font=('Helvetica', 10))
-        style.map("TRadiobutton",
-                  background=[("active", self.colors["BACKGROUND_COLOR"])],
-                  foreground=[("active", self.colors["ACCENT_COLOR"])])
+        # Primary / Accent action button (warm orange)
+        style.configure("Primary.TButton",
+                        background=self.colors["ACCENT"],
+                        foreground="#1C1C20",
+                        bordercolor=self.colors["ACCENT"],
+                        borderwidth=0,
+                        padding=(18, 10),
+                        font=('Helvetica', 10, 'bold'))
+        style.map("Primary.TButton",
+                  background=[
+                      ("active", self.colors["ACCENT_HOVER"]),
+                      ("pressed", self.colors["ACCENT_PRESSED"])
+                  ],
+                  foreground=[("active", "#1C1C20"), ("pressed", "#1C1C20")])
 
-        # Menubutton (OptionMenu) styling
-        style.configure("TMenubutton",
-                        background=self.colors["SECONDARY_BACKGROUND_COLOR"],
-                        foreground=self.colors["FOREGROUND_COLOR"],
-                        bordercolor=self.colors["ACCENT_COLOR"],
+        # Subtle / ghost button for secondary actions (Browse, Cancel)
+        style.configure("Ghost.TButton",
+                        background=self.colors["BG_SECONDARY"],
+                        foreground=self.colors["FG_SECONDARY"],
+                        bordercolor=self.colors["BORDER"],
                         borderwidth=1,
-                        padding=6,
+                        padding=(12, 7),
+                        font=('Helvetica', 9))
+        style.map("Ghost.TButton",
+                  background=[("active", self.colors["BG_TERTIARY"])],
+                  foreground=[("active", self.colors["FG"])])
+
+        # Radiobuttons - clean
+        style.configure("TRadiobutton",
+                        background=self.colors["BG"],
+                        foreground=self.colors["FG"],
+                        font=('Helvetica', 10),
+                        padding=3)
+        style.map("TRadiobutton",
+                  foreground=[("active", self.colors["ACCENT"])])
+
+        # OptionMenu / Menubutton
+        style.configure("TMenubutton",
+                        background=self.colors["BG_INPUT"],
+                        foreground=self.colors["FG"],
+                        bordercolor=self.colors["BORDER"],
+                        borderwidth=1,
+                        padding=(10, 6),
                         font=('Helvetica', 10))
         style.map("TMenubutton",
-                  background=[("active", self.colors["TERTIARY_BACKGROUND_COLOR"])],
-                  foreground=[("active", self.colors["ACCENT_COLOR"])])
+                  background=[("active", self.colors["BG_TERTIARY"])],
+                  foreground=[("active", self.colors["ACCENT"])])
 
-        # Progressbar styling
+        # Progressbar - orange accent
         style.configure("TProgressbar",
-                        troughcolor=self.colors["SECONDARY_BACKGROUND_COLOR"],
-                        background=self.colors["ACCENT_COLOR"],
-                        bordercolor=self.colors["ACCENT_COLOR"],
-                        lightcolor=self.colors["ACCENT_COLOR"],
-                        darkcolor=self.colors["ACCENT_COLOR"],
-                        borderwidth=1)
+                        troughcolor=self.colors["BG_SECONDARY"],
+                        background=self.colors["ACCENT"],
+                        bordercolor=self.colors["ACCENT"],
+                        lightcolor=self.colors["ACCENT"],
+                        darkcolor=self.colors["ACCENT"],
+                        borderwidth=0,
+                        thickness=8)
 
-        # Create notebook (tabs)
+        # LabelFrame (used sparingly now) - very subtle
+        style.configure("TLabelframe",
+                        background=self.colors["BG"],
+                        bordercolor=self.colors["BORDER"],
+                        borderwidth=1)
+        style.configure("TLabelframe.Label",
+                        background=self.colors["BG"],
+                        foreground=self.colors["ACCENT"],
+                        font=('Helvetica', 9, 'bold'))
+
+        # === Refined header ===
+        header = ttk.Frame(self.master)
+        header.pack(fill=tk.X, padx=18, pady=(16, 8))
+
+        # Title with subtle orange accent
+        title = ttk.Label(header, text="TubeHarvester", font=('Helvetica', 18, 'bold'),
+                          foreground=self.colors["FG"])
+        title.pack(side=tk.LEFT)
+
+        accent_dot = ttk.Label(header, text="  ●", font=('Helvetica', 16),
+                               foreground=self.colors["ACCENT"])
+        accent_dot.pack(side=tk.LEFT, padx=(2, 0))
+
+        subtitle = ttk.Label(header, text="YouTube Downloader", font=('Helvetica', 11),
+                             foreground=self.colors["FG_MUTED"])
+        subtitle.pack(side=tk.LEFT, padx=(10, 0))
+
+        # Subtle divider line
+        divider = ttk.Frame(self.master, height=1, style="TFrame")
+        divider.pack(fill=tk.X, padx=18, pady=(0, 6))
+        # We'll style the actual visual separator below via a colored frame
+        sep = tk.Frame(self.master, height=1, bg=self.colors["BORDER"])
+        sep.pack(fill=tk.X, padx=18, pady=(0, 4))
+
+        # Notebook tabs
         self.notebook = ttk.Notebook(self.master)
-        self.notebook.pack(expand=True, fill=tk.BOTH, padx=5, pady=5)
+        self.notebook.pack(expand=True, fill=tk.BOTH, padx=12, pady=(4, 12))
 
         # Single download tab
         self.single_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.single_tab, text="Single Download")
+        self.notebook.add(self.single_tab, text="  Single Download  ")
 
         # Single download panel
         self.single_panel = SingleDownloadPanel(self.single_tab, colors=self.colors)
@@ -904,7 +1041,7 @@ class YouTubeDownloaderGUI:
 
         # Batch download tab
         self.batch_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.batch_tab, text="Batch Download")
+        self.notebook.add(self.batch_tab, text="  Batch Download  ")
 
         # Batch download panel
         self.batch_panel = BatchDownloadPanel(self.batch_tab, colors=self.colors)

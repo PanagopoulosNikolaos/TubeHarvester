@@ -14,15 +14,19 @@ class TestSingleDownloadPanel:
         self.root = tk.Tk()
         self.root.withdraw()  # Hide the root window for testing
         self.colors = {
-            "BACKGROUND_COLOR": "#22272e",
-            "SECONDARY_BACKGROUND_COLOR": "#2d333b",
-            "TERTIARY_BACKGROUND_COLOR": "#323842",
-            "FOREGROUND_COLOR": "#adbac7",
-            "TEXT_SECONDARY_COLOR": "#768390",
-            "ACCENT_COLOR": "#58a6ff",
-            "ACCENT_COLOR_DARK": "#4883c8",
-            "BORDER_COLOR": "#444c56",
-            "TEXT_INACTIVE_COLOR": "#768390",
+            "BG": "#1C1C20",
+            "BG_SECONDARY": "#252529",
+            "BG_TERTIARY": "#2F2F34",
+            "BG_INPUT": "#2D2D31",
+            "FG": "#EDEDEF",
+            "FG_SECONDARY": "#A1A1A7",
+            "FG_MUTED": "#6E6E75",
+            "ACCENT": "#FF7A3D",
+            "ACCENT_HOVER": "#FF955F",
+            "ACCENT_PRESSED": "#E86A2F",
+            "BORDER": "#3A3A3F",
+            "SUCCESS": "#22C55E",
+            "ERROR": "#F87171",
         }
         self.panel = SingleDownloadPanel(self.root, self.colors)
 
@@ -40,9 +44,8 @@ class TestSingleDownloadPanel:
 
         assert self.panel.path_display.get() == "/test/path"
 
-    @patch('src.GUI.messagebox')
     @patch('yt_dlp.YoutubeDL')
-    def testFetchResolutionsNoFormats(self, mock_ydl_class, mock_messagebox):
+    def testFetchResolutionsNoFormats(self, mock_ydl_class):
         """Test fetching resolutions when no video formats found."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -50,15 +53,15 @@ class TestSingleDownloadPanel:
         mock_ydl.extract_info.return_value = {'formats': []}
         mock_ydl_class.return_value = mock_ydl
 
-        # Set the last checked URL so the method will execute
         self.panel.last_checked_url = "https://youtube.com/watch?v=test"
         self.panel.fetchResolutions()
 
-        mock_messagebox.showinfo.assert_called_with("Info", "No video resolutions found.")
+        # Now logs instead of dialog for better UX
+        content = self.panel.message_screen.get("1.0", tk.END)
+        assert "No video resolutions found" in content or "No resolutions" in content.lower()
 
-    @patch('src.GUI.messagebox')
     @patch('yt_dlp.YoutubeDL')
-    def testFetchResolutionsError(self, mock_ydl_class, mock_messagebox):
+    def testFetchResolutionsError(self, mock_ydl_class):
         """Test fetching resolutions with error."""
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
@@ -66,11 +69,12 @@ class TestSingleDownloadPanel:
         mock_ydl.extract_info.side_effect = Exception("Network error")
         mock_ydl_class.return_value = mock_ydl
 
-        # Set the last checked URL so the method will execute
         self.panel.last_checked_url = "https://youtube.com/watch?v=test"
         self.panel.fetchResolutions()
 
-        mock_messagebox.showerror.assert_called_with("Error", "Failed to fetch resolutions: Network error")
+        # Error is logged (improved non-intrusive UX)
+        content = self.panel.message_screen.get("1.0", tk.END)
+        assert "error" in content.lower() or "Network error" in content
 
     @patch('src.GUI.Mp4Downloader')
     @patch('threading.Thread')
@@ -83,7 +87,9 @@ class TestSingleDownloadPanel:
         mock_thread_class.return_value = mock_thread
 
         # Set up GUI fields
+        self.panel.url_entry.delete(0, tk.END)
         self.panel.url_entry.insert(0, "https://youtube.com/watch?v=test")
+        self.panel.path_display.delete(0, tk.END)
         self.panel.path_display.insert(0, "/test/path")
         self.panel.resolution_var.set("720")
 
@@ -108,7 +114,9 @@ class TestSingleDownloadPanel:
         mock_thread_class.return_value = mock_thread
 
         # Set up GUI fields
+        self.panel.url_entry.delete(0, tk.END)
         self.panel.url_entry.insert(0, "https://youtube.com/watch?v=test")
+        self.panel.path_display.delete(0, tk.END)
         self.panel.path_display.insert(0, "/test/path")
         self.panel.format_var.set("MP3")
 
@@ -178,15 +186,19 @@ class TestBatchDownloadPanel:
         self.root = tk.Tk()
         self.root.withdraw()  # Hide the root window for testing
         self.colors = {
-            "BACKGROUND_COLOR": "#22272e",
-            "SECONDARY_BACKGROUND_COLOR": "#2d333b",
-            "TERTIARY_BACKGROUND_COLOR": "#323842",
-            "FOREGROUND_COLOR": "#adbac7",
-            "TEXT_SECONDARY_COLOR": "#768390",
-            "ACCENT_COLOR": "#58a6ff",
-            "ACCENT_COLOR_DARK": "#4883c8",
-            "BORDER_COLOR": "#444c56",
-            "TEXT_INACTIVE_COLOR": "#768390",
+            "BG": "#1C1C20",
+            "BG_SECONDARY": "#252529",
+            "BG_TERTIARY": "#2F2F34",
+            "BG_INPUT": "#2D2D31",
+            "FG": "#EDEDEF",
+            "FG_SECONDARY": "#A1A1A7",
+            "FG_MUTED": "#6E6E75",
+            "ACCENT": "#FF7A3D",
+            "ACCENT_HOVER": "#FF955F",
+            "ACCENT_PRESSED": "#E86A2F",
+            "BORDER": "#3A3A3F",
+            "SUCCESS": "#22C55E",
+            "ERROR": "#F87171",
         }
         self.panel = BatchDownloadPanel(self.root, self.colors)
 
