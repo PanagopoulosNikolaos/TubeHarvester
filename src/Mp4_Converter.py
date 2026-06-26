@@ -70,6 +70,7 @@ class Mp4Downloader:
         if not self.url:
             raise ValueError("URL is not set.")
 
+        cookie_file = self.cookie_manager.getCookieFile()
         ydl_opts = {
             'format': f'bestvideo[height<={self.resolution}]+bestaudio/best[height<={self.resolution}]/best',
             'outtmpl': os.path.join(self.path, f"{custom_title or '%(title)s'}.%(ext)s"),
@@ -78,38 +79,14 @@ class Mp4Downloader:
             'merge_output_format': 'mp4',
             'extractor_args': {
                 'youtube': {
-                    'hl': 'en-US',
-                    'gl': 'US',
                     'skip': ['translated_subs'],
                 }
             },
-            'postprocessors': [{
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': 'mp4',
-            }, {
-                'key': 'FFmpegMerger',
-            }],
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': '*/*',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-origin',
-                'X-Client-Version': '2.20240523.01.00',
-                'X-Youtube-Client-Name': '1',
-                'Origin': 'https://www.youtube.com',
-                'Referer': 'https://www.youtube.com/',
-            },
             'quiet': False,
             'no_warnings': False,
-            'age_limit': 99,
-            'check_formats': 'selected',
-            'youtube_include_dash_manifest': True,
-            'youtube_include_hls_manifest': True,
-            'javascript_executor': '/home/ice/.deno/bin/deno',
         }
+        if cookie_file:
+            ydl_opts['cookiefile'] = cookie_file
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -134,19 +111,17 @@ class Mp4Downloader:
 
         opts = {
             'noplaylist': True, 
-            'cookiefile': self.cookie_manager.getCookieFile(),
-            'javascript_executor': '/home/ice/.deno/bin/deno',
             'quiet': True,
             'no_warnings': True,
             'extractor_args': {
                 'youtube': {
-                    'hl': 'en-US',
-                    'gl': 'US',
+                    'skip': ['translated_subs'],
                 }
             },
-            'youtube_include_dash_manifest': True,
-            'youtube_include_hls_manifest': True,
         }
+        cookie_file = self.cookie_manager.getCookieFile()
+        if cookie_file:
+            opts['cookiefile'] = cookie_file
         with yt_dlp.YoutubeDL(opts) as ydl:
             return ydl.extract_info(self.url, download=False)
 

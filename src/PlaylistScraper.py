@@ -95,7 +95,6 @@ class PlaylistScraper:
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,
-                'javascript_executor': 'deno',
             }
             if cookie_file:
                 ydl_opts['cookiefile'] = cookie_file
@@ -165,7 +164,6 @@ class PlaylistScraper:
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,
-                'javascript_executor': 'deno',
             }
             if cookie_file:
                 ydl_opts['cookiefile'] = cookie_file

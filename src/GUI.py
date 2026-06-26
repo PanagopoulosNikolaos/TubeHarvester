@@ -165,23 +165,21 @@ class SingleDownloadPanel(ttk.Frame):
             downloader = Mp4Downloader(log_callback=self.logMessage)
             downloader.setUrl(url)
             
-            # Use the same options as the actual download to get all available formats
+            # Use options to get all available formats for resolution selection
             opts = {
                 'noplaylist': True, 
-                'cookiefile': downloader.cookie_manager.getCookieFile(),
-                'javascript_executor': '/home/ice/.deno/bin/deno',
                 'quiet': True,
                 'no_warnings': True,
                 'extractor_args': {
                     'youtube': {
-                        'hl': 'en-US',
-                        'gl': 'US',
+                        'skip': ['translated_subs'],
                     }
                 },
-                'youtube_include_dash_manifest': True,
-                'youtube_include_hls_manifest': True,
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',  # Get all available formats for resolution selection
+                'format': 'bestvideo+bestaudio/best',
             }
+            cookie_file = downloader.cookie_manager.getCookieFile()
+            if cookie_file:
+                opts['cookiefile'] = cookie_file
             
             import yt_dlp
             with yt_dlp.YoutubeDL(opts) as ydl:
@@ -450,19 +448,17 @@ class BatchDownloadPanel(ttk.Frame):
             
             opts = {
                 'noplaylist': True,
-                'cookiefile': downloader.cookie_manager.getCookieFile(),
-                'javascript_executor': '/home/ice/.deno/bin/deno',
                 'quiet': True,
                 'no_warnings': True,
                 'extractor_args': {
                     'youtube': {
-                        'hl': 'en-US',
-                        'gl': 'US',
+                        'skip': ['translated_subs'],
                     }
                 },
-                'youtube_include_dash_manifest': True,
-                'youtube_include_hls_manifest': True,
             }
+            cookie_file = downloader.cookie_manager.getCookieFile()
+            if cookie_file:
+                opts['cookiefile'] = cookie_file
             
             # For playlists, get first video URL to check formats
             fetch_url = url

@@ -84,7 +84,8 @@ class TestMp4Downloader:
         result = self.downloader.fetchVideoInfo()
 
         opts_capture = mock_ydl_class.call_args[0][0]
-        assert opts_capture['javascript_executor'] == '/home/ice/.deno/bin/deno'
+        assert 'javascript_executor' not in opts_capture
+        assert opts_capture.get('noplaylist') is True
 
         assert result == mock_info
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
@@ -119,7 +120,8 @@ class TestMp4Downloader:
         self.downloader.downloadVideo()
 
         opts_capture = mock_ydl_class.call_args[0][0]
-        assert opts_capture['javascript_executor'] == '/home/ice/.deno/bin/deno'
+        assert 'javascript_executor' not in opts_capture
+        assert opts_capture.get('noplaylist') is True
         
         # Verify extract_info was called with download=True
         mock_ydl.extract_info.assert_called_with(self.test_url, download=True)

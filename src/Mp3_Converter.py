@@ -77,35 +77,18 @@ class Mp3Downloader:
             
             # Common options for modern YouTube handling
             common_opts = {
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': '*/*',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Sec-Fetch-Dest': 'empty',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Site': 'same-origin',
-                    'X-Client-Version': '2.20240523.01.00',
-                    'X-Youtube-Client-Name': '1',
-                    'Origin': 'https://www.youtube.com',
-                    'Referer': 'https://www.youtube.com/',
-                },
                 'extractor_args': {
                     'youtube': {
-                        'hl': 'en-US',
-                        'gl': 'US',
                         'skip': ['translated_subs'],
                     }
                 },
-                'cookiefile': cookie_file,
                 'noplaylist': True,
                 'quiet': False,
                 'no_warnings': False,
-                'age_limit': 99,
-                'youtube_include_dash_manifest': True,
-                'youtube_include_hls_manifest': True,
                 'compat_opts': ['no-live-chat'],
             }
+            if cookie_file:
+                common_opts['cookiefile'] = cookie_file
 
 
             # First extraction to get title
