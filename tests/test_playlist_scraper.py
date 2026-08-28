@@ -1,35 +1,50 @@
-import pytest
+"""
+Unit tests for PlaylistScraper module.
+"""
+
 from unittest.mock import Mock, patch
-from src.PlaylistScraper import PlaylistScraper
+import pytest
+
+from src.extraction.playlist_scraper import PlaylistScraper
 
 
 class TestPlaylistScraper:
-    """Test PlaylistScraper functionality."""
+    """
+    Test suite for PlaylistScraper functionality and normalization.
+    """
 
-    def setup_method(self):
-        """Initialize test URL and scraper instance."""
+    def setup_method(self) -> None:
+        """
+        Initializes test URL and scraper instance.
+        """
         self.test_url = "https://www.youtube.com/playlist?list=test123"
-        self.scraper = PlaylistScraper()
+        self.scraper = PlaylistScraper(timeout=0.0)
 
-    def testInit(self):
-        """Test initialization."""
+    def testInit(self) -> None:
+        """
+        Tests default initialization parameters.
+        """
         scraper = PlaylistScraper()
         assert scraper.timeout == 2.0
 
-    def testInitCustomTimeout(self):
-        """Test initialization with custom timeout."""
+    def testInitCustomTimeout(self) -> None:
+        """
+        Tests custom timeout parameter configuration.
+        """
         scraper = PlaylistScraper(timeout=5.0)
         assert scraper.timeout == 5.0
 
+    @patch('time.sleep')
     @patch('yt_dlp.YoutubeDL')
-    def testScrapePlaylistSuccess(self, mock_ydl_class):
-        """Test successful playlist scraping."""
-        # Mock playlist info with entries
+    def testScrapePlaylistSuccess(self, mock_ydl_class: Mock, mock_sleep: Mock) -> None:
+        """
+        Tests successful playlist scraping and formatting.
+        """
         mock_playlist_info = {
             'entries': [
                 {'id': 'video1', 'title': 'Video 1', 'duration': 300},
                 {'id': 'video2', 'title': 'Video 2', 'duration': 250},
-                {'id': 'video3', 'title': 'Video 3', 'duration': 400}
+                {'id': 'video3', 'title': 'Video 3', 'duration': 400},
             ]
         }
 
@@ -44,23 +59,25 @@ class TestPlaylistScraper:
         expected_videos = [
             {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video_1', 'duration': 300},
             {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video_2', 'duration': 250},
-            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video_3', 'duration': 400}
+            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video_3', 'duration': 400},
         ]
 
         assert videos == expected_videos
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
 
+    @patch('time.sleep')
     @patch('yt_dlp.YoutubeDL')
-    def testScrapePlaylistLimitedVideos(self, mock_ydl_class):
-        """Test playlist scraping with video limit."""
-        # Mock playlist info with more entries than limit
+    def testScrapePlaylistLimitedVideos(self, mock_ydl_class: Mock, mock_sleep: Mock) -> None:
+        """
+        Tests limiting the number of scraped videos.
+        """
         mock_playlist_info = {
             'entries': [
                 {'id': 'video1', 'title': 'Video 1', 'duration': 300},
                 {'id': 'video2', 'title': 'Video 2', 'duration': 250},
                 {'id': 'video3', 'title': 'Video 3', 'duration': 400},
                 {'id': 'video4', 'title': 'Video 4', 'duration': 200},
-                {'id': 'video5', 'title': 'Video 5', 'duration': 350}
+                {'id': 'video5', 'title': 'Video 5', 'duration': 350},
             ]
         }
 
@@ -72,15 +89,16 @@ class TestPlaylistScraper:
 
         videos = self.scraper.scrapePlaylist(self.test_url, max_videos=3)
 
-        # Should only return first 3 videos
         assert len(videos) == 3
         assert videos[0]['title'] == 'Video_1'
         assert videos[1]['title'] == 'Video_2'
         assert videos[2]['title'] == 'Video_3'
 
     @patch('yt_dlp.YoutubeDL')
-    def testScrapePlaylistNoEntries(self, mock_ydl_class):
-        """Test playlist scraping with no entries."""
+    def testScrapePlaylistNoEntries(self, mock_ydl_class: Mock) -> None:
+        """
+        Tests scraping playlist when entries object is None.
+        """
         mock_playlist_info = {'entries': None}
 
         mock_ydl = Mock()
@@ -90,12 +108,13 @@ class TestPlaylistScraper:
         mock_ydl_class.return_value = mock_ydl
 
         videos = self.scraper.scrapePlaylist(self.test_url)
-
         assert videos == []
 
     @patch('yt_dlp.YoutubeDL')
-    def testScrapePlaylistEmptyEntries(self, mock_ydl_class):
-        """Test playlist scraping with empty entries list."""
+    def testScrapePlaylistEmptyEntries(self, mock_ydl_class: Mock) -> None:
+        """
+        Tests scraping playlist when entries list is empty.
+        """
         mock_playlist_info = {'entries': []}
 
         mock_ydl = Mock()
@@ -105,17 +124,19 @@ class TestPlaylistScraper:
         mock_ydl_class.return_value = mock_ydl
 
         videos = self.scraper.scrapePlaylist(self.test_url)
-
         assert videos == []
 
+    @patch('time.sleep')
     @patch('yt_dlp.YoutubeDL')
-    def testScrapePlaylistWithNoneEntries(self, mock_ydl_class):
-        """Test playlist scraping with None entries in list."""
+    def testScrapePlaylistWithNoneEntries(self, mock_ydl_class: Mock, mock_sleep: Mock) -> None:
+        """
+        Tests that None items in entries list are gracefully skipped.
+        """
         mock_playlist_info = {
             'entries': [
                 {'id': 'video1', 'title': 'Video 1', 'duration': 300},
-                None,  # None entry
-                {'id': 'video2', 'title': 'Video 2', 'duration': 250}
+                None,
+                {'id': 'video2', 'title': 'Video 2', 'duration': 250},
             ]
         }
 
@@ -127,17 +148,18 @@ class TestPlaylistScraper:
 
         videos = self.scraper.scrapePlaylist(self.test_url)
 
-        # Should skip None entries
         expected_videos = [
             {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video_1', 'duration': 300},
-            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video_2', 'duration': 250}
+            {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video_2', 'duration': 250},
         ]
 
         assert videos == expected_videos
 
     @patch('yt_dlp.YoutubeDL')
-    def testScrapePlaylistFailure(self, mock_ydl_class):
-        """Test playlist scraping failure."""
+    def testScrapePlaylistFailure(self, mock_ydl_class: Mock) -> None:
+        """
+        Tests error propagation when scraping encounters an exception.
+        """
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
         mock_ydl.__exit__ = Mock(return_value=None)
@@ -148,8 +170,10 @@ class TestPlaylistScraper:
             self.scraper.scrapePlaylist(self.test_url)
 
     @patch('yt_dlp.YoutubeDL')
-    def testGetPlaylistTitleSuccess(self, mock_ydl_class):
-        """Test successful playlist title retrieval."""
+    def testGetPlaylistTitleSuccess(self, mock_ydl_class: Mock) -> None:
+        """
+        Tests retrieval of sanitized playlist title.
+        """
         mock_playlist_info = {'title': 'Test Playlist'}
 
         mock_ydl = Mock()
@@ -159,13 +183,14 @@ class TestPlaylistScraper:
         mock_ydl_class.return_value = mock_ydl
 
         title = self.scraper.getPlaylistTitle(self.test_url)
-
         assert title == 'Test_Playlist'
         mock_ydl.extract_info.assert_called_with(self.test_url, download=False)
 
     @patch('yt_dlp.YoutubeDL')
-    def testGetPlaylistTitleFailure(self, mock_ydl_class):
-        """Test playlist title retrieval failure."""
+    def testGetPlaylistTitleFailure(self, mock_ydl_class: Mock) -> None:
+        """
+        Tests fallback playlist title when network or extraction fails.
+        """
         mock_ydl = Mock()
         mock_ydl.__enter__ = Mock(return_value=mock_ydl)
         mock_ydl.__exit__ = Mock(return_value=None)
@@ -173,17 +198,18 @@ class TestPlaylistScraper:
         mock_ydl_class.return_value = mock_ydl
 
         title = self.scraper.getPlaylistTitle(self.test_url)
-
         assert title == 'Unknown Playlist'
 
     @patch('time.sleep')
     @patch('yt_dlp.YoutubeDL')
-    def testScrapePlaylistRateLimiting(self, mock_ydl_class, mock_sleep):
-        """Test that rate limiting is applied between video processing."""
+    def testScrapePlaylistRateLimiting(self, mock_ydl_class: Mock, mock_sleep: Mock) -> None:
+        """
+        Tests that rate limiting sleeps between items.
+        """
         mock_playlist_info = {
             'entries': [
                 {'id': 'video1', 'title': 'Video 1', 'duration': 300},
-                {'id': 'video2', 'title': 'Video 2', 'duration': 250}
+                {'id': 'video2', 'title': 'Video 2', 'duration': 250},
             ]
         }
 
@@ -195,18 +221,19 @@ class TestPlaylistScraper:
 
         scraper = PlaylistScraper(timeout=1.5)
         scraper.scrapePlaylist(self.test_url)
-
-        # Should sleep once between the two videos
         mock_sleep.assert_called_with(1.5)
 
+    @patch('time.sleep')
     @patch('yt_dlp.YoutubeDL')
-    def testScrapePlaylistMissingFields(self, mock_ydl_class):
-        """Test playlist scraping with missing fields in entries."""
+    def testScrapePlaylistMissingFields(self, mock_ydl_class: Mock, mock_sleep: Mock) -> None:
+        """
+        Tests defaults for video entries with missing fields.
+        """
         mock_playlist_info = {
             'entries': [
-                {'id': 'video1'},  # Missing title and duration
-                {'id': 'video2', 'title': 'Video 2'},  # Missing duration
-                {'id': 'video3', 'title': 'Video 3', 'duration': 400}
+                {'id': 'video1'},
+                {'id': 'video2', 'title': 'Video 2'},
+                {'id': 'video3', 'title': 'Video 3', 'duration': 400},
             ]
         }
 
@@ -221,7 +248,7 @@ class TestPlaylistScraper:
         expected_videos = [
             {'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Unknown_Title', 'duration': 0},
             {'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video_2', 'duration': 0},
-            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video_3', 'duration': 400}
+            {'url': 'https://www.youtube.com/watch?v=video3', 'title': 'Video_3', 'duration': 400},
         ]
 
         assert videos == expected_videos

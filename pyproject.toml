@@ -5,10 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tubeharvester"
 version = "1.0.0"
-description = "A Python application for downloading YouTube videos, audio, playlists, and channels."
+description = "A modern NiceGUI web application for downloading YouTube videos, audio, playlists, and channels."
 requires-python = ">=3.9"
 dependencies = [
     "yt-dlp",
+    "nicegui>=2.10",
 ]
 
 [project.optional-dependencies]
@@ -17,11 +18,11 @@ dev = [
 ]
 
 [project.scripts]
-tubeharvester = "src.GUI:runGui"
+tubeharvester = "src.ui.app:createApp"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.json"]
+"*" = ["*.json", "*.css"]

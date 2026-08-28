@@ -1,91 +1,51 @@
-#!/usr/bin/env python3
 """
-Test playlist URL handling functionality.
-Verifies playlist scraping works with both video URL with playlist parameter and direct playlist URL.
+Tests for playlist URL handling and normalization.
 """
 
-import sys
 import logging
-from src.PlaylistScraper import PlaylistScraper
+from unittest.mock import Mock, patch
+import pytest
 
-# Configure logging to see any warnings/errors
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+from src.extraction.playlist_scraper import PlaylistScraper
 
-def testPlaylistScraping():
-    """Test playlist scraping with both URL formats."""
-    
-    # Video URL with playlist parameter
+
+def testPlaylistUrlNormalization() -> None:
+    """
+    Tests playlist normalization for various YouTube URL patterns.
+    """
+    scraper = PlaylistScraper(timeout=0.0)
+
     video_url_with_playlist = "https://www.youtube.com/watch?v=zk3T2qtK2B0&list=PLrxcNWZXdQ2l9Jnr8-thveoeoQlBUSFOw"
-    
-    # Direct playlist URL format
     direct_playlist_url = "https://www.youtube.com/playlist?list=PLrxcNWZXdQ2l9Jnr8-thveoeoQlBUSFOw"
-    
-    print("=" * 80)
-    print("Testing Playlist Scraping Fix")
-    print("=" * 80)
-    
-    scraper = PlaylistScraper(timeout=0.5)  # Shorter timeout for testing
-    
-    # Test 1: Video URL with playlist parameter
-    print("\n[TEST 1] Testing with video URL containing playlist parameter:")
-    print(f"URL: {video_url_with_playlist}")
-    print("-" * 80)
-    
-    try:
-        # Get playlist title
-        title = scraper.getPlaylistTitle(video_url_with_playlist)
-        print(f"Playlist Title: {title}")
-        
-        # Scrape first 5 videos as a test
-        print("\nScraping first 5 videos...")
-        videos = scraper.scrapePlaylist(video_url_with_playlist, max_videos=5)
-        
-        if videos:
-            print(f"\n✓ SUCCESS! Found {len(videos)} videos:")
-            for i, video in enumerate(videos, 1):
-                print(f"  {i}. {video['title']}")
-                print(f"     URL: {video['url']}")
-                print(f"     Duration: {video['duration']} seconds")
-        else:
-            print("\n✗ FAILED! No videos found.")
-            
-    except Exception as e:
-        print(f"\n✗ ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    # Test 2: Direct playlist URL
-    print("\n" + "=" * 80)
-    print("[TEST 2] Testing with direct playlist URL:")
-    print(f"URL: {direct_playlist_url}")
-    print("-" * 80)
-    
-    try:
-        # Get playlist title
-        title = scraper.getPlaylistTitle(direct_playlist_url)
-        print(f"Playlist Title: {title}")
-        
-        # Scrape first 5 videos as a test
-        print("\nScraping first 5 videos...")
-        videos = scraper.scrapePlaylist(direct_playlist_url, max_videos=5)
-        
-        if videos:
-            print(f"\n✓ SUCCESS! Found {len(videos)} videos:")
-            for i, video in enumerate(videos, 1):
-                print(f"  {i}. {video['title']}")
-                print(f"     URL: {video['url']}")
-                print(f"     Duration: {video['duration']} seconds")
-        else:
-            print("\n✗ FAILED! No videos found.")
-            
-    except Exception as e:
-        print(f"\n✗ ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    print("\n" + "=" * 80)
-    print("Testing Complete!")
-    print("=" * 80)
 
-if __name__ == "__main__":
-    testPlaylistScraping()
+    normalized_from_watch = scraper.normalizePlaylistUrl(video_url_with_playlist)
+    normalized_direct = scraper.normalizePlaylistUrl(direct_playlist_url)
+
+    assert "playlist?list=PLrxcNWZXdQ2l9Jnr8-thveoeoQlBUSFOw" in normalized_from_watch
+    assert "playlist?list=PLrxcNWZXdQ2l9Jnr8-thveoeoQlBUSFOw" in normalized_direct
+
+
+@patch('time.sleep')
+@patch('yt_dlp.YoutubeDL')
+def testPlaylistScrapingMocked(mock_ydl_class: Mock, mock_sleep: Mock) -> None:
+    """
+    Tests playlist scraping workflow with mocked yt-dlp extractor.
+    """
+    mock_ydl = Mock()
+    mock_ydl.__enter__ = Mock(return_value=mock_ydl)
+    mock_ydl.__exit__ = Mock(return_value=None)
+    mock_ydl.extract_info.return_value = {
+        'title': 'Test Playlist',
+        'entries': [
+            {'id': 'zk3T2qtK2B0', 'title': 'Test Song', 'duration': 210},
+        ],
+    }
+    mock_ydl_class.return_value = mock_ydl
+
+    scraper = PlaylistScraper(timeout=0.0)
+    title = scraper.getPlaylistTitle("https://www.youtube.com/playlist?list=PLtest")
+    videos = scraper.scrapePlaylist("https://www.youtube.com/playlist?list=PLtest", max_videos=5)
+
+    assert title == "Test_Playlist"
+    assert len(videos) == 1
+    assert videos[0]['url'] == "https://www.youtube.com/watch?v=zk3T2qtK2B0"

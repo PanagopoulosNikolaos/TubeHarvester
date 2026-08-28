@@ -1,16 +1,17 @@
 # TubeHarvester
 
-A Python application for downloading YouTube videos, audio, playlists, and channels.
+A modern NiceGUI web application for downloading YouTube videos, audio, playlists, and channels.
 
 ## Features
 
-- Download individual YouTube videos
-- Convert videos to MP3 or MP4 formats
-- Batch download multiple videos
-- Scrape and download entire YouTube playlists
-- Scrape and download all videos from a YouTube channel
-- Handle YouTube authentication with automatic cookie extraction from browsers
-- Simple graphical user interface (GUI)
+- Modern, responsive web interface built with NiceGUI and styled with the Orange and Dark Soft design system
+- Download individual YouTube videos with dynamic resolution selection (4K, 1080p, 720p, 480p, 360p)
+- Convert and extract audio to MP3 format
+- Batch download entire YouTube playlists and channel uploads in parallel
+- Support for YouTube mix playlists and various channel URL formats
+- Automatic browser cookie discovery for authenticated requests
+- Real-time download progress bars and live activity console logging
+- Decoupled backend architecture in `src/extraction/` with clean callback contracts
 
 ## Project Structure
 
@@ -18,39 +19,56 @@ A Python application for downloading YouTube videos, audio, playlists, and chann
 TubeHarvester/
 ├── LICENSE
 ├── main.py
+├── pyproject.toml
 ├── README.md
 ├── requirements.txt
 ├── run_tests.py
-├── src
-│   ├── BatchDownloader.py
-│   ├── ChannelScraper.py
-│   ├── CookieManager.py
-│   ├── GUI.py
+├── src/
 │   ├── __init__.py
-│   ├── Mp3_Converter.py
-│   ├── Mp4_Converter.py
-│   ├── PlaylistScraper.py
-├── images
-│   ├── batch_download.png
-│   └── single_download.png
-└── tests
+│   ├── extraction/
+│   │   ├── __init__.py
+│   │   ├── batch_downloader.py
+│   │   ├── channel_scraper.py
+│   │   ├── cookie_manager.py
+│   │   ├── mp3_downloader.py
+│   │   ├── mp4_downloader.py
+│   │   ├── playlist_scraper.py
+│   │   └── utils.py
+│   └── ui/
+│       ├── __init__.py
+│       ├── app.py
+│       ├── theme.py
+│       ├── components/
+│       │   ├── __init__.py
+│       │   ├── format_picker.py
+│       │   ├── header.py
+│       │   ├── log_console.py
+│       │   ├── nav_tabs.py
+│       │   ├── path_selector.py
+│       │   ├── progress.py
+│       │   └── url_input.py
+│       └── views/
+│           ├── __init__.py
+│           ├── batch_view.py
+│           └── single_view.py
+└── tests/
     ├── __init__.py
     ├── test_batch_downloader.py
     ├── test_batch_mp3_downloading.py
     ├── test_channel_scraper.py
     ├── test_cookie_manager.py
-    ├── test_gui.py
     ├── test_mp3_converter.py
     ├── test_mp4_converter.py
     ├── test_playlist_scraper.py
     ├── test_playlist_url_handling.py
+    ├── test_ui_components.py
     └── test_youtube_mix_playlists.py
 ```
 
 ## Installation
 
 ### Prerequisites
-- Python 3.x
+- Python 3.9+
 - FFmpeg
 
 ### Install FFmpeg
@@ -58,18 +76,18 @@ TubeHarvester/
 sudo apt install ffmpeg  # Debian/Ubuntu
 ```
 
-### Install with pip / pipx (Recommended)
+### Install with pip / pipx
 
-Install the package directly from the source directory:
+Install the package directly in editable mode:
 
 ```bash
 pip install -e .
 ```
 
-For global CLI access, install with pipx:
+For development dependencies:
 
 ```bash
-pipx install .
+pip install -e ".[dev]"
 ```
 
 ### Setup Python Environment (Alternative)
@@ -79,44 +97,39 @@ pip install -r requirements.txt
 
 Or with conda:
 ```bash
-conda activate base_env
+conda activate py14
 pip install -r requirements.txt
 ```
 
 ### Run the Application
 
-After installing with pip/pipx, run the GUI from anywhere:
-
-```bash
-tubeharvester
-```
-
-Or run directly:
+Launch the NiceGUI web app:
 
 ```bash
 python3 main.py
 ```
 
-Or with conda:
+Or when installed as a package:
+
 ```bash
-conda activate base_env && python main.py
+tubeharvester
 ```
 
-## Usage
+The web interface will be accessible at `http://127.0.0.1:8080`.
 
-The GUI will launch, allowing to enter YouTube URLs and select download options.
+## Running Tests
 
-## Screenshots
+Run the full pytest suite:
 
-Here are a couple of screenshots demonstrating the GUI and batch download flow:
+```bash
+python run_tests.py
+```
 
-- **Single Download:**
+Or directly with pytest:
 
-    ![Single Download](images/single_download.png)
-
-- **Batch Download:**
-
-    ![Batch Download](images/batch_download.png)
+```bash
+pytest tests/
+```
 
 ## License
 
