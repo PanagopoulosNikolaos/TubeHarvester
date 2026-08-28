@@ -94,10 +94,20 @@ class TestNavTabs:
         assert tabs.active_tab == 'batch'
         callback.assert_called_with('batch')
 
+    def testSetActiveTab(self) -> None:
+        """
+        Tests setActiveTab without triggering callbacks.
+        """
+        callback = Mock()
+        tabs = NavTabs(active_tab='single', on_change=callback)
+        tabs.setActiveTab('batch')
+        assert tabs.active_tab == 'batch'
+        callback.assert_not_called()
+
 
 class TestUrlInput:
     """
-    Test suite for URL input validation and error feedback.
+    Test suite for URL input validation, link detection, and error feedback.
     """
 
     def testInit(self) -> None:
@@ -108,6 +118,19 @@ class TestUrlInput:
         assert url_input.placeholder == "test_placeholder"
         assert url_input.value == ""
         assert url_input.error_message is None
+
+    def testDetectUrlType(self) -> None:
+        """
+        Tests static link type detection for videos, playlists, and channels.
+        """
+        assert UrlInput.detectUrlType("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "single"
+        assert UrlInput.detectUrlType("https://youtu.be/dQw4w9WgXcQ") == "single"
+        assert UrlInput.detectUrlType("https://www.youtube.com/shorts/xyz123") == "single"
+        assert UrlInput.detectUrlType("https://www.youtube.com/playlist?list=PL123") == "playlist"
+        assert UrlInput.detectUrlType("https://www.youtube.com/@Veritasium") == "channel"
+        assert UrlInput.detectUrlType("https://www.youtube.com/channel/UC123") == "channel"
+        assert UrlInput.detectUrlType("https://vimeo.com/12345") == "unknown"
+        assert UrlInput.detectUrlType("") == "unknown"
 
     def testValidationSingleSuccess(self) -> None:
         """
@@ -220,6 +243,7 @@ class TestFormatPicker:
         picker = FormatPicker(on_format_change=callback)
         picker.setFormat("MP3")
         assert picker.getFormat() == "MP3"
+        assert "320 kbps" in picker.getQuality()
         callback.assert_called_with("MP3")
 
 
@@ -307,19 +331,23 @@ class TestViews:
         """
         Tests SingleView component initialization.
         """
-        view = SingleView()
+        switch_cb = Mock()
+        view = SingleView(on_mode_switch=switch_cb)
         assert view.is_downloading is False
         assert view.url_input is not None
         assert view.format_picker is not None
+        assert view.on_mode_switch == switch_cb
 
     def testBatchViewInit(self) -> None:
         """
         Tests BatchView component initialization.
         """
-        view = BatchView()
+        switch_cb = Mock()
+        view = BatchView(on_mode_switch=switch_cb)
         assert view.is_downloading is False
         assert view.mode_value == "playlist"
         assert view.max_videos_value == "200"
+        assert view.on_mode_switch == switch_cb
 
     def testBatchViewModeChange(self) -> None:
         """
@@ -333,3 +361,21 @@ class TestViews:
 
         assert view.mode_value == "channel"
         assert view.max_videos_value == "ALL"
+
+    def testSingleViewAutoSwitch(self) -> None:
+        """
+        Tests single view triggering auto switch to batch when playlist is pasted.
+        """
+        switch_cb = Mock()
+        view = SingleView(on_mode_switch=switch_cb)
+        view.handleUrlDebounced("https://www.youtube.com/playlist?list=PL12345")
+        switch_cb.assert_called_once_with('batch', "https://www.youtube.com/playlist?list=PL12345")
+
+    def testBatchViewAutoSwitch(self) -> None:
+        """
+        Tests batch view triggering auto switch to single when single video is pasted.
+        """
+        switch_cb = Mock()
+        view = BatchView(on_mode_switch=switch_cb)
+        view.handleUrlDebounced("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        switch_cb.assert_called_once_with('single', "https://www.youtube.com/watch?v=dQw4w9WgXcQ")

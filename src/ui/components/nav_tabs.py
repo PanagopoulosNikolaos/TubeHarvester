@@ -36,22 +36,16 @@ class NavTabs:
         """
         with ui.element('div').classes('glass-tabs w-full flex flex-row items-center gap-2'):
             self.single_btn = ui.button(
-                on_click=lambda: self.selectTab('single')
+                'Single Download',
+                icon='img:/images/icons/YouTube-download.png',
+                on_click=lambda: self.selectTab('single'),
             ).props('flat no-caps').classes('nav-tab-btn flex-1')
-
-            with self.single_btn:
-                with ui.row().classes('items-center justify-center gap-2 no-wrap'):
-                    ui.image('/images/icons/YouTube-download.png').classes('app-icon-sm')
-                    ui.label('Single Download').classes('text-sm font-semibold')
 
             self.batch_btn = ui.button(
-                on_click=lambda: self.selectTab('batch')
+                'Batch Download',
+                icon='img:/images/icons/piled-batchfiles.png',
+                on_click=lambda: self.selectTab('batch'),
             ).props('flat no-caps').classes('nav-tab-btn flex-1')
-
-            with self.batch_btn:
-                with ui.row().classes('items-center justify-center gap-2 no-wrap'):
-                    ui.image('/images/icons/playlist.png').classes('app-icon-sm')
-                    ui.label('Batch Download').classes('text-sm font-semibold')
 
         self.updateTabStyles()
 
@@ -66,6 +60,16 @@ class NavTabs:
         self.updateTabStyles()
         if self.on_change:
             self.on_change(self.active_tab)
+
+    def setActiveTab(self, tab_id: str) -> None:
+        """
+        Updates the active tab state and styling without invoking the on_change callback.
+
+        Args:
+            tab_id (str): Tab identifier ('single' or 'batch').
+        """
+        self.active_tab = tab_id
+        self.updateTabStyles()
 
     def handleTabChange(self, e: object) -> None:
         """

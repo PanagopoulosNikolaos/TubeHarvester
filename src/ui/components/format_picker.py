@@ -2,7 +2,7 @@
 Format and quality selector component for choosing between MP4 video and MP3 audio.
 
 Provides format toggle buttons with custom PNG icons, dynamic resolution dropdown
-with skeleton loading states, and automatic disabling of resolution selection when MP3 format is active.
+for video, bitrate quality selector for audio, and skeleton loading states.
 """
 
 from typing import Callable, List, Optional
@@ -11,10 +11,11 @@ from nicegui import ui
 
 class FormatPicker:
     """
-    Renders and manages media format and quality resolution selection.
+    Renders and manages media format and quality resolution/bitrate selection.
     """
 
     DEFAULT_RESOLUTIONS = ["1080p", "720p", "480p", "360p"]
+    DEFAULT_BITRATES = ["320 kbps (Best)", "256 kbps (High)", "192 kbps (Medium)", "128 kbps (Standard)"]
 
     def __init__(
         self,
@@ -34,7 +35,9 @@ class FormatPicker:
         """
         self.format_value = default_format
         self.quality_value = default_quality
+        self.bitrate_value = self.DEFAULT_BITRATES[0]
         self.resolutions = list(self.DEFAULT_RESOLUTIONS)
+        self.bitrates = list(self.DEFAULT_BITRATES)
         self.is_loading_resolutions = False
 
         self.on_format_change = on_format_change
@@ -42,6 +45,7 @@ class FormatPicker:
 
         self.mp4_btn: Optional[ui.button] = None
         self.mp3_btn: Optional[ui.button] = None
+        self.quality_label: Optional[ui.label] = None
         self.quality_select: Optional[ui.select] = None
         self.skeleton_container: Optional[ui.element] = None
         self.select_container: Optional[ui.element] = None
@@ -57,45 +61,40 @@ class FormatPicker:
 
                 with ui.element('div').classes('glass-tabs w-full flex flex-row items-center gap-1'):
                     self.mp4_btn = ui.button(
-                        on_click=lambda: self.setFormat('MP4')
+                        'MP4 Video',
+                        icon='img:/images/icons/download-mp4.png',
+                        on_click=lambda: self.setFormat('MP4'),
                     ).props('flat no-caps').classes('nav-tab-btn flex-1')
-                    with self.mp4_btn:
-                        with ui.row().classes('items-center justify-center gap-1.5 no-wrap'):
-                            ui.image('/images/icons/download-mp4.png').classes('app-icon-sm')
-                            ui.label('MP4 Video').classes('text-xs sm:text-sm font-semibold')
 
                     self.mp3_btn = ui.button(
-                        on_click=lambda: self.setFormat('MP3')
+                        'MP3 Audio',
+                        icon='img:/images/icons/download-mp3.png',
+                        on_click=lambda: self.setFormat('MP3'),
                     ).props('flat no-caps').classes('nav-tab-btn flex-1')
-                    with self.mp3_btn:
-                        with ui.row().classes('items-center justify-center gap-1.5 no-wrap'):
-                            ui.image('/images/icons/download-mp3.png').classes('app-icon-sm')
-                            ui.label('MP3 Audio').classes('text-xs sm:text-sm font-semibold')
 
                 self.updateFormatStyles()
 
-            # Quality selection column
+            # Quality / Bitrate selection column
             with ui.column().classes('flex-1 min-w-[140px] gap-1'):
-                ui.label('Quality / Resolution').classes('field-label')
+                initial_label = 'Quality / Resolution' if self.format_value == 'MP4' else 'Audio Bitrate'
+                self.quality_label = ui.label(initial_label).classes('field-label')
 
                 self.skeleton_container = ui.element('div').classes('skeleton-shimmer hidden')
 
                 self.select_container = ui.column().classes('w-full')
                 with self.select_container:
+                    initial_options = self.resolutions if self.format_value == 'MP4' else self.bitrates
+                    initial_val = self.quality_value if self.format_value == 'MP4' else self.bitrate_value
+
                     self.quality_select = ui.select(
-                        options=self.resolutions,
-                        value=self.quality_value if self.format_value == 'MP4' else 'N/A',
+                        options=initial_options,
+                        value=initial_val,
                         on_change=self.handleQualityChanged,
                     ).props('outlined dense options-dense').classes('glass-input w-full')
 
-                    # Syncs initial disabled state if starting in MP3 mode.
-                    if self.format_value == 'MP3':
-                        self.quality_select.props('disable')
-                        self.quality_select.value = 'N/A'
-
     def setFormat(self, new_format: str) -> None:
         """
-        Sets the active media format and updates UI state.
+        Sets the active media format and updates dropdown options between resolution and bitrate.
 
         Args:
             new_format (str): 'MP4' or 'MP3'.
@@ -103,16 +102,15 @@ class FormatPicker:
         self.format_value = new_format
         self.updateFormatStyles()
 
-        if self.quality_select:
+        if self.quality_select and self.quality_label:
             if self.format_value == 'MP3':
-                # Disables quality selector since MP3 downloads audio without video resolutions.
-                self.quality_select.props('disable')
-                self.quality_select.value = 'N/A'
+                self.quality_label.text = 'Audio Bitrate'
+                self.quality_select.options = self.bitrates
+                self.quality_select.value = self.bitrate_value
             else:
-                self.quality_select.props(remove='disable')
-                if self.resolutions:
-                    self.quality_value = self.resolutions[0]
-                    self.quality_select.value = self.quality_value
+                self.quality_label.text = 'Quality / Resolution'
+                self.quality_select.options = self.resolutions
+                self.quality_select.value = self.quality_value
 
         if self.on_format_change:
             self.on_format_change(self.format_value)
@@ -143,16 +141,23 @@ class FormatPicker:
 
     def handleQualityChanged(self, e: object) -> None:
         """
-        Processes resolution selection updates.
+        Processes resolution or bitrate selection updates.
 
         Args:
-            e (object): Select event containing the chosen resolution.
+            e (object): Select event containing the chosen quality.
         """
         new_val = getattr(e, 'value', '') or ''
-        if self.format_value == 'MP4' and new_val != 'N/A':
+        if not new_val:
+            return
+
+        if self.format_value == 'MP4':
             self.quality_value = str(new_val)
             if self.on_quality_change:
                 self.on_quality_change(self.quality_value)
+        else:
+            self.bitrate_value = str(new_val)
+            if self.on_quality_change:
+                self.on_quality_change(self.bitrate_value)
 
     def setResolutions(self, resolutions_list: List[str]) -> None:
         """
@@ -162,11 +167,10 @@ class FormatPicker:
             resolutions_list (List[str]): List of available resolution labels (e.g., ['1080p', '720p']).
         """
         self.resolutions = resolutions_list if resolutions_list else list(self.DEFAULT_RESOLUTIONS)
-        if self.quality_select:
+        if self.quality_select and self.format_value == 'MP4':
             self.quality_select.options = self.resolutions
-            if self.format_value == 'MP4':
-                self.quality_value = self.resolutions[0]
-                self.quality_select.value = self.quality_value
+            self.quality_value = self.resolutions[0]
+            self.quality_select.value = self.quality_value
 
     def setLoadingResolutions(self, is_loading: bool) -> None:
         """
@@ -196,9 +200,11 @@ class FormatPicker:
 
     def getQuality(self) -> str:
         """
-        Retrieves the selected video quality setting.
+        Retrieves the selected video quality setting or audio bitrate.
 
         Returns:
             str: Quality setting string.
         """
-        return self.quality_value
+        if self.format_value == 'MP4':
+            return self.quality_value
+        return self.bitrate_value

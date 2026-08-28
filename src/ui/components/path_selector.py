@@ -1,7 +1,8 @@
 """
 Path selector component for destination folder configuration.
 
-Provides an editable path display, quick preset selectors, and validation checks.
+Provides an editable path display, directory picker modal with full-width presets,
+and custom path input capabilities.
 """
 
 import os
@@ -97,7 +98,7 @@ class PathSelector:
 
     def openBrowseDialog(self) -> None:
         """
-        Opens a directory picker modal dialog with standard system folder shortcuts.
+        Opens a directory picker modal dialog with full-width clickable presets and custom path entry.
         """
         home_dir = os.path.expanduser('~')
         presets = [
@@ -108,23 +109,42 @@ class PathSelector:
             ("Documents", os.path.join(home_dir, "Documents")),
         ]
 
-        with ui.dialog() as dialog, ui.card().classes('glass-card min-w-[340px] max-w-[480px]'):
-            ui.label('Select Download Directory').classes('text-lg font-bold text-white mb-2')
-            ui.label('Choose a standard destination folder or enter a custom path:').classes('text-xs text-stone-400 mb-3')
+        with ui.dialog() as dialog, ui.card().classes('glass-card min-w-[340px] max-w-[460px] p-6'):
+            ui.label('Select Download Directory').classes('text-lg font-bold text-white mb-1')
+            ui.label('Choose a standard destination folder or enter a custom path:').classes('text-xs text-stone-300 mb-3')
 
+            # Presets list with full-width click targets
             with ui.column().classes('w-full gap-2 mb-4'):
                 for name, path in presets:
-                    with ui.row().classes('w-full items-center justify-between p-2 rounded-lg bg-stone-900/60 hover:bg-stone-800/80 cursor-pointer transition'):
-                        ui.label(name).classes('text-sm font-medium text-stone-200')
+                    with ui.row().classes('preset-row items-center justify-between'):
+                        with ui.column().classes('gap-0'):
+                            ui.label(name).classes('text-sm font-semibold text-white')
+                            ui.label(path).classes('text-xs text-stone-400')
 
                         def selectPreset(p: str = path) -> None:
                             self.setValue(p)
                             dialog.close()
 
-                        ui.button('Select', on_click=selectPreset).props('dense outline size=sm').classes('text-xs')
+                        # Click handler for entire row
+                        ui.button('Select', on_click=selectPreset).props('flat dense size=sm').classes('text-xs text-orange-400')
+
+            # Custom path input section
+            ui.label('Custom Directory Path:').classes('text-xs font-semibold text-stone-300 mb-1')
+            custom_input = ui.input(
+                placeholder=home_dir,
+                value=self.value,
+            ).props('outlined dense').classes('glass-input w-full mb-4')
 
             with ui.row().classes('w-full justify-end gap-2'):
                 ui.button('Close', on_click=dialog.close).classes('btn-secondary px-4')
+
+                def applyCustom() -> None:
+                    target_val = custom_input.value.strip()
+                    if target_val:
+                        self.setValue(target_val)
+                    dialog.close()
+
+                ui.button('Apply Path', on_click=applyCustom).classes('btn-primary px-4')
 
         dialog.open()
 

@@ -1,7 +1,7 @@
 """
-URL input component with debounced change notification and validation.
+URL input component with debounced change notification, clipboard paste, and link type auto-detection.
 
-Renders styled text input with inline error feedback, clear button, and validation rules.
+Renders styled text input with inline error feedback, quick-paste action, and validation rules.
 """
 
 import asyncio
@@ -11,7 +11,7 @@ from nicegui import ui
 
 class UrlInput:
     """
-    Renders and manages URL input with debouncing and inline validation states.
+    Renders and manages URL input with debouncing, quick-paste, and inline validation states.
     """
 
     def __init__(
@@ -19,7 +19,7 @@ class UrlInput:
         placeholder: str = "https://www.youtube.com/watch?v=...",
         label: str = "YouTube URL",
         on_change_debounced: Optional[Callable[[str], None]] = None,
-        debounce_delay: float = 0.9,
+        debounce_delay: float = 0.8,
     ) -> None:
         """
         Initializes the UrlInput component.
@@ -28,7 +28,7 @@ class UrlInput:
             placeholder (str): Input placeholder text.
             label (str): Label above the input field.
             on_change_debounced (Optional[Callable[[str], None]], optional): Debounced callback on value changes.
-            debounce_delay (float): Debounce interval in seconds (default: 0.9s).
+            debounce_delay (float): Debounce interval in seconds (default: 0.8s).
         """
         self.placeholder = placeholder
         self.label = label
@@ -43,22 +43,44 @@ class UrlInput:
 
     def render(self) -> None:
         """
-        Builds the URL input container and attaches event handlers.
+        Builds the URL input container and attaches event handlers and quick-paste button.
         """
         with ui.column().classes('w-full gap-1'):
             ui.label(self.label).classes('field-label')
 
-            with ui.row().classes('w-full items-center relative'):
+            with ui.row().classes('w-full items-center gap-2'):
                 self.input_element = ui.input(
                     placeholder=self.placeholder,
                     value=self.value,
                     on_change=self.handleInputChanged,
-                ).props('outlined dense clearable').classes('glass-input w-full')
+                ).props('outlined dense clearable').classes('glass-input flex-1')
 
                 # Attaches blur event for inline form validation.
                 self.input_element.on('blur', self.handleBlur)
 
+                # Quick-Paste button invoking browser clipboard API
+                ui.button(
+                    'Paste',
+                    on_click=self.pasteFromClipboard,
+                ).classes('btn-secondary px-3')
+
             self.error_label = ui.label('').classes('input-error-msg hidden')
+
+    async def pasteFromClipboard(self) -> None:
+        """
+        Reads plain text from the client clipboard and populates the input field.
+        """
+        try:
+            pasted_text = await ui.run_javascript(
+                'navigator.clipboard ? navigator.clipboard.readText() : ""'
+            )
+            if pasted_text and isinstance(pasted_text, str) and pasted_text.strip():
+                clean_url = pasted_text.strip()
+                self.setValue(clean_url)
+                if self.on_change_debounced:
+                    self.on_change_debounced(clean_url)
+        except Exception:
+            pass
 
     def handleInputChanged(self, e: object) -> None:
         """
@@ -100,6 +122,33 @@ class UrlInput:
         """
         if self.value:
             self.validate()
+
+    @staticmethod
+    def detectUrlType(url: str) -> str:
+        """
+        Detects whether a URL represents a single video, playlist, or channel.
+
+        Args:
+            url (str): YouTube URL string.
+
+        Returns:
+            str: 'playlist', 'channel', 'single', or 'unknown'.
+        """
+        raw = url.strip().lower()
+        if not raw:
+            return 'unknown'
+
+        if "list=" in raw:
+            return 'playlist'
+
+        channel_tokens = ["/channel/", "/user/", "/c/", "/@"]
+        if any(token in raw for token in channel_tokens):
+            return 'channel'
+
+        if "youtube.com/watch" in raw or "youtu.be/" in raw or "youtube.com/shorts/" in raw:
+            return 'single'
+
+        return 'unknown'
 
     def validate(self, is_batch: bool = False) -> bool:
         """

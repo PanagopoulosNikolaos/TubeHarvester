@@ -1,11 +1,12 @@
 """
 Single download view controller for processing individual YouTube video and audio links.
 
-Orchestrates URL validation, dynamic format discovery, progress monitoring, and background worker threads.
+Orchestrates URL validation, metadata discovery, thumbnail preview, progress monitoring,
+and background worker threads.
 """
 
 import asyncio
-from typing import Optional
+from typing import Callable, Optional
 from nicegui import ui
 
 from ...extraction.mp3_downloader import Mp3Downloader
@@ -19,13 +20,17 @@ from ..components.url_input import UrlInput
 
 class SingleView:
     """
-    Manages the Single Download view UI lifecycle and download operations.
+    Manages the Single Download view UI lifecycle, metadata preview, and download operations.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, on_mode_switch: Optional[Callable[[str, str], None]] = None) -> None:
         """
         Initializes SingleView components and state variables.
+
+        Args:
+            on_mode_switch (Optional[Callable[[str, str], None]], optional): Callback for auto-switching modes.
         """
+        self.on_mode_switch = on_mode_switch
         self.url_input = UrlInput(
             placeholder="https://www.youtube.com/watch?v=...",
             label="YouTube Video URL",
@@ -42,13 +47,16 @@ class SingleView:
         self.active_downloader: Optional[object] = None
 
         self.card_container: Optional[ui.card] = None
+        self.preview_card: Optional[ui.element] = None
+        self.preview_thumb: Optional[ui.image] = None
+        self.preview_title: Optional[ui.label] = None
+        self.preview_author: Optional[ui.label] = None
+        self.preview_duration: Optional[ui.label] = None
         self.action_button: Optional[ui.button] = None
-        self.action_icon: Optional[ui.image] = None
-        self.action_label: Optional[ui.label] = None
 
     def render(self) -> None:
         """
-        Builds the single download interface elements.
+        Builds the single download interface elements with metadata preview.
         """
         with ui.card().classes('glass-card w-full') as card:
             self.card_container = card
@@ -59,15 +67,25 @@ class SingleView:
                 self.format_picker.render()
                 self.path_selector.render()
 
+                # Pre-download metadata preview card
+                self.preview_card = ui.element('div').classes('metadata-preview-card w-full hidden')
+                with self.preview_card:
+                    with ui.element('div').classes('preview-thumb-box'):
+                        self.preview_thumb = ui.image('').classes('preview-thumb-img')
+
+                    with ui.column().classes('flex-1 gap-0'):
+                        self.preview_title = ui.label('Loading video...').classes('preview-title')
+                        with ui.element('div').classes('preview-meta'):
+                            self.preview_author = ui.label('').classes('text-xs text-stone-400')
+                            self.preview_duration = ui.label('').classes('text-xs text-orange-400')
+
                 # Action button container
                 with ui.row().classes('w-full justify-end mt-2'):
                     self.action_button = ui.button(
+                        'Download Media',
+                        icon='img:/images/icons/YouTube-download.png',
                         on_click=self.handleActionClicked,
                     ).classes('btn-primary w-full sm:w-auto')
-                    with self.action_button:
-                        with ui.row().classes('items-center justify-center gap-2 no-wrap'):
-                            self.action_icon = ui.image('/images/icons/YouTube-download.png').classes('app-icon-btn')
-                            self.action_label = ui.label('Download Media').classes('font-semibold')
 
                 # Progress indicator
                 self.progress_bar.render()
@@ -75,30 +93,53 @@ class SingleView:
                 # Real-time activity log
                 self.log_console.render()
 
+    def setUrl(self, url: str) -> None:
+        """
+        Sets the URL value and triggers metadata fetching.
+
+        Args:
+            url (str): Target YouTube URL.
+        """
+        self.url_input.setValue(url)
+        self.handleUrlDebounced(url)
+
     def handleUrlDebounced(self, url: str) -> None:
         """
-        Triggers background resolution discovery when a valid URL is typed.
+        Triggers link auto-detection and background metadata preview discovery.
 
         Args:
             url (str): The current URL text.
         """
         cleaned_url = url.strip()
-        if not cleaned_url or cleaned_url == self.last_fetched_url:
+        if not cleaned_url:
+            self.hidePreview()
+            return
+
+        if cleaned_url == self.last_fetched_url:
+            return
+
+        link_type = UrlInput.detectUrlType(cleaned_url)
+
+        # Auto-detects playlist or channel URL and delegates to batch view if handler registered
+        if link_type in ['playlist', 'channel'] and self.on_mode_switch:
+            self.last_fetched_url = cleaned_url
+            ui.notify(f"Detected {link_type} link. Switching to Batch Download mode.", type="info", position="top-right")
+            self.on_mode_switch('batch', cleaned_url)
             return
 
         if "youtube.com" in cleaned_url.lower() or "youtu.be" in cleaned_url.lower():
             self.last_fetched_url = cleaned_url
-            asyncio.create_task(self.fetchResolutionsAsync(cleaned_url))
+            asyncio.create_task(self.fetchResolutionsAndPreviewAsync(cleaned_url))
 
-    async def fetchResolutionsAsync(self, url: str) -> None:
+    async def fetchResolutionsAndPreviewAsync(self, url: str) -> None:
         """
-        Queries video formats in a background thread and updates available resolutions.
+        Queries video metadata and formats in a background thread.
 
         Args:
             url (str): The YouTube video URL to query.
         """
         self.format_picker.setLoadingResolutions(True)
-        self.log_console.log(f"Fetching available formats for: {url}")
+        self.log_console.log(f"Fetching video info for: {url}")
 
         try:
             downloader = Mp4Downloader()
@@ -106,8 +147,27 @@ class SingleView:
 
             # Runs yt-dlp metadata extraction asynchronously in a worker thread.
             info = await asyncio.to_thread(downloader.fetchVideoInfo)
-            formats = info.get('formats', []) if info else []
+            if not info:
+                self.hidePreview()
+                return
 
+            # Extracts preview metadata
+            title = info.get('title', 'YouTube Video')
+            uploader = info.get('uploader') or info.get('channel') or ''
+            duration_sec = info.get('duration', 0)
+            thumbnail = info.get('thumbnail', '')
+
+            # Formats duration as MM:SS or HH:MM:SS
+            duration_text = ""
+            if duration_sec:
+                mins, secs = divmod(int(duration_sec), 60)
+                hrs, mins = divmod(mins, 60)
+                duration_text = f"{hrs}:{mins:02d}:{secs:02d}" if hrs > 0 else f"{mins}:{secs:02d}"
+
+            self.showPreview(title, uploader, duration_text, thumbnail)
+
+            # Discovers available resolutions
+            formats = info.get('formats', [])
             resolutions_set = set()
             for fmt in formats:
                 height = fmt.get('height')
@@ -115,25 +175,45 @@ class SingleView:
                     resolutions_set.add(f"{height}p")
 
             if resolutions_set:
-                # Sorts resolutions in descending order (e.g., 1080p, 720p, 480p).
                 sorted_resolutions = sorted(
                     list(resolutions_set),
                     key=lambda r: int(r.replace('p', '')) if r.replace('p', '').isdigit() else 0,
                     reverse=True,
                 )
                 self.format_picker.setResolutions(sorted_resolutions)
-                self.log_console.log(
-                    f"Discovered resolutions: {', '.join(sorted_resolutions)}",
-                    level="info",
-                )
-            else:
-                self.log_console.log("No distinct video resolutions found; using defaults.", level="warn")
+                self.log_console.log(f"Discovered resolutions: {', '.join(sorted_resolutions)}", level="info")
 
         except Exception as exc:
-            self.log_console.log(f"Failed to fetch resolutions: {str(exc)}", level="warn")
+            self.log_console.log(f"Failed to fetch video info: {str(exc)}", level="warn")
+            self.hidePreview()
 
         finally:
             self.format_picker.setLoadingResolutions(False)
+
+    def showPreview(self, title: str, uploader: str, duration: str, thumbnail: str) -> None:
+        """
+        Populates and displays the pre-download metadata preview card.
+
+        Args:
+            title (str): Video title.
+            uploader (str): Uploader or channel name.
+            duration (str): Formatted duration string.
+            thumbnail (str): Thumbnail image URL.
+        """
+        if self.preview_card and self.preview_title and self.preview_author and self.preview_duration and self.preview_thumb:
+            self.preview_title.text = title
+            self.preview_author.text = uploader
+            self.preview_duration.text = duration
+            if thumbnail:
+                self.preview_thumb.source = thumbnail
+            self.preview_card.classes(remove='hidden')
+
+    def hidePreview(self) -> None:
+        """
+        Hides the metadata preview card.
+        """
+        if self.preview_card:
+            self.preview_card.classes(add='hidden')
 
     def handleActionClicked(self) -> None:
         """
@@ -249,16 +329,14 @@ class SingleView:
             downloading (bool): True if downloading is in progress, False otherwise.
         """
         self.is_downloading = downloading
-        if self.action_button and self.action_label:
+        if self.action_button:
             if downloading:
-                self.action_label.text = "Cancel Download"
-                if self.action_icon:
-                    self.action_icon.classes(add='hidden')
+                self.action_button.text = "Cancel Download"
+                self.action_button.props('icon=""')
                 self.action_button.classes(remove="btn-primary")
                 self.action_button.classes(add="btn-danger")
             else:
-                self.action_label.text = "Download Media"
-                if self.action_icon:
-                    self.action_icon.classes(remove='hidden')
+                self.action_button.text = "Download Media"
+                self.action_button.props('icon="img:/images/icons/YouTube-download.png"')
                 self.action_button.classes(remove="btn-danger")
                 self.action_button.classes(add="btn-primary")

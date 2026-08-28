@@ -2,11 +2,11 @@
 Batch download view module for TubeHarvester.
 
 Manages playlist and channel scraping, parallel batch download queues,
-cancellation confirmation dialogs, and progress tracking.
+cancellation confirmation dialogs, metadata previews, and progress tracking.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from nicegui import ui
 
 from ...extraction.batch_downloader import BatchDownloader
@@ -24,19 +24,25 @@ class BatchView:
     Coordinates UI and background processing for batch playlist and channel downloads.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, on_mode_switch: Optional[Callable[[str, str], None]] = None) -> None:
         """
         Initializes the BatchView component state.
+
+        Args:
+            on_mode_switch (Optional[Callable[[str, str], None]], optional): Callback for auto-switching modes.
         """
+        self.on_mode_switch = on_mode_switch
         self.is_downloading = False
         self.mode_value = "playlist"
         self.max_videos_value = "200"
         self.active_batch_downloader: Optional[BatchDownloader] = None
         self.batch_task: Optional[asyncio.Task] = None
+        self.last_fetched_url: str = ""
 
         self.url_input = UrlInput(
             placeholder="https://www.youtube.com/playlist?list=...",
             label="Playlist URL",
+            on_change_debounced=self.handleUrlDebounced,
         )
         self.path_selector = PathSelector()
         self.format_picker = FormatPicker()
@@ -46,9 +52,10 @@ class BatchView:
         self.playlist_btn: Optional[ui.button] = None
         self.channel_btn: Optional[ui.button] = None
         self.max_videos_input: Optional[ui.input] = None
+        self.preview_card: Optional[ui.element] = None
+        self.preview_title: Optional[ui.label] = None
+        self.preview_count: Optional[ui.label] = None
         self.action_button: Optional[ui.button] = None
-        self.action_icon: Optional[ui.image] = None
-        self.action_label: Optional[ui.label] = None
 
     def render(self) -> None:
         """
@@ -62,20 +69,16 @@ class BatchView:
 
                     with ui.element('div').classes('glass-tabs w-full flex flex-row items-center gap-1'):
                         self.playlist_btn = ui.button(
-                            on_click=lambda: self.setMode('playlist')
+                            'Playlist Download',
+                            icon='img:/images/icons/playlist.png',
+                            on_click=lambda: self.setMode('playlist'),
                         ).props('flat no-caps').classes('nav-tab-btn flex-1')
-                        with self.playlist_btn:
-                            with ui.row().classes('items-center justify-center gap-1.5 no-wrap'):
-                                ui.image('/images/icons/playlist.png').classes('app-icon-sm')
-                                ui.label('Playlist Download').classes('text-xs sm:text-sm font-semibold')
 
                         self.channel_btn = ui.button(
-                            on_click=lambda: self.setMode('channel')
+                            'Channel / Profile Scrape',
+                            icon='img:/images/icons/channel.png',
+                            on_click=lambda: self.setMode('channel'),
                         ).props('flat no-caps').classes('nav-tab-btn flex-1')
-                        with self.channel_btn:
-                            with ui.row().classes('items-center justify-center gap-1.5 no-wrap'):
-                                ui.image('/images/icons/channel.png').classes('app-icon-sm')
-                                ui.label('Channel / Profile Scrape').classes('text-xs sm:text-sm font-semibold')
 
                     self.updateModeStyles()
 
@@ -93,25 +96,111 @@ class BatchView:
                             value=self.max_videos_value,
                             on_change=self.handleMaxVideosChanged,
                         ).props('outlined dense').classes('glass-input w-full')
+                        ui.label("Number of videos (e.g. 50) or 'ALL' for unlimited").classes('field-helper')
 
                     with ui.column().classes('flex-1 gap-1'):
                         self.path_selector.render()
 
+                # Batch preview card
+                self.preview_card = ui.element('div').classes('metadata-preview-card w-full hidden')
+                with self.preview_card:
+                    with ui.column().classes('flex-1 gap-0'):
+                        self.preview_title = ui.label('Queue target: ...').classes('preview-title')
+                        with ui.element('div').classes('preview-meta'):
+                            self.preview_count = ui.label('').classes('text-xs text-orange-400')
+
                 # Action button container with circular download icon
                 with ui.row().classes('w-full justify-end mt-2'):
                     self.action_button = ui.button(
+                        'Start Batch Download',
+                        icon='img:/images/icons/download-circular-button.png',
                         on_click=self.handleActionClicked,
                     ).classes('btn-primary w-full sm:w-auto')
-                    with self.action_button:
-                        with ui.row().classes('items-center justify-center gap-2 no-wrap'):
-                            self.action_icon = ui.image('/images/icons/download-circular-button.png').classes('app-icon-btn')
-                            self.action_label = ui.label('Start Batch Download').classes('font-semibold')
 
                 # Progress indicator
                 self.progress_bar.render()
 
                 # Real-time activity log
                 self.log_console.render()
+
+    def setUrl(self, url: str) -> None:
+        """
+        Sets the URL value and triggers processing.
+
+        Args:
+            url (str): Target batch URL.
+        """
+        self.url_input.setValue(url)
+        self.handleUrlDebounced(url)
+
+    def handleUrlDebounced(self, url: str) -> None:
+        """
+        Processes batch link typing, link type auto-detection, and title discovery.
+
+        Args:
+            url (str): The current URL text.
+        """
+        cleaned_url = url.strip()
+        if not cleaned_url:
+            self.hidePreview()
+            return
+
+        if cleaned_url == self.last_fetched_url:
+            return
+
+        link_type = UrlInput.detectUrlType(cleaned_url)
+
+        # Auto-detects single video URL and switches to Single view if handler registered
+        if link_type == 'single' and self.on_mode_switch:
+            self.last_fetched_url = cleaned_url
+            ui.notify("Detected single video link. Switching to Single Download mode.", type="info", position="top-right")
+            self.on_mode_switch('single', cleaned_url)
+            return
+
+        if "youtube.com" in cleaned_url.lower() or "youtu.be" in cleaned_url.lower():
+            self.last_fetched_url = cleaned_url
+            asyncio.create_task(self.fetchBatchPreviewAsync(cleaned_url))
+
+    async def fetchBatchPreviewAsync(self, url: str) -> None:
+        """
+        Queries playlist or channel title in a background thread.
+
+        Args:
+            url (str): Target batch URL.
+        """
+        try:
+            if self.mode_value == 'playlist':
+                scraper = PlaylistScraper(timeout=0.0)
+                title = await asyncio.to_thread(scraper.getPlaylistTitle, url)
+                if title:
+                    self.showPreview(f"Playlist: {title}", "Ready to scrape videos")
+            else:
+                channel_scraper = ChannelScraper(timeout=0.0)
+                name = await asyncio.to_thread(channel_scraper.getChannelName, url)
+                if name:
+                    self.showPreview(f"Channel: {name}", "Ready to scan channel playlists and uploads")
+        except Exception:
+            self.hidePreview()
+
+    def showPreview(self, title: str, subtitle: str) -> None:
+        """
+        Displays batch queue target preview.
+
+        Args:
+            title (str): Title description.
+            subtitle (str): Subtitle note.
+        """
+        if self.preview_card and self.preview_title and self.preview_count:
+            self.preview_title.text = title
+            self.preview_count.text = subtitle
+            self.preview_card.classes(remove='hidden')
+
+    def hidePreview(self) -> None:
+        """
+        Hides the batch preview card.
+        """
+        if self.preview_card:
+            self.preview_card.classes(add='hidden')
 
     def setMode(self, new_mode: str) -> None:
         """
@@ -378,16 +467,14 @@ class BatchView:
             downloading (bool): True if batch operation is running, False otherwise.
         """
         self.is_downloading = downloading
-        if self.action_button and self.action_label:
+        if self.action_button:
             if downloading:
-                self.action_label.text = "Cancel Batch"
-                if self.action_icon:
-                    self.action_icon.classes(add='hidden')
+                self.action_button.text = "Cancel Batch"
+                self.action_button.props('icon=""')
                 self.action_button.classes(remove="btn-primary")
                 self.action_button.classes(add="btn-danger")
             else:
-                self.action_label.text = "Start Batch Download"
-                if self.action_icon:
-                    self.action_icon.classes(remove='hidden')
+                self.action_button.text = "Start Batch Download"
+                self.action_button.props('icon="img:/images/icons/download-circular-button.png"')
                 self.action_button.classes(remove="btn-danger")
                 self.action_button.classes(add="btn-primary")

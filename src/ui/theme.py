@@ -12,12 +12,12 @@ THEME_CSS = """
 
 :root {
     --bg-base: #121214;
-    --bg-surface: rgba(28, 28, 32, 0.78);
-    --bg-surface-elevated: rgba(36, 36, 42, 0.88);
+    --bg-surface: rgba(28, 28, 32, 0.82);
+    --bg-surface-elevated: rgba(36, 36, 42, 0.92);
     --bg-input: rgba(20, 20, 24, 0.85);
     
-    --border-subtle: rgba(255, 255, 255, 0.09);
-    --border-hover: rgba(255, 255, 255, 0.18);
+    --border-subtle: rgba(255, 255, 255, 0.12);
+    --border-hover: rgba(255, 255, 255, 0.22);
     --border-focus: #FF7A3D;
     
     --accent: #FF7A3D;
@@ -26,7 +26,7 @@ THEME_CSS = """
     --accent-glow: rgba(255, 122, 61, 0.28);
     
     --brown-selected: #5D4037;
-    --brown-border: rgba(141, 110, 99, 0.6);
+    --brown-border: rgba(141, 110, 99, 0.65);
     
     --danger: #EF4444;
     --danger-hover: #F87171;
@@ -41,8 +41,8 @@ THEME_CSS = """
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     
     --text-1: #EDEDEF;
-    --text-2: #A1A1A7;
-    --text-muted: #6E6E75;
+    --text-2: #D1D1D6;
+    --text-muted: #8E8E93;
     
     --shadow-card: 0 16px 36px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
     --shadow-glow: 0 0 24px rgba(255, 122, 61, 0.3);
@@ -112,7 +112,7 @@ body::before {
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: clamp(14px, 2vh, 22px);
+    gap: clamp(14px, 2vh, 20px);
 }
 
 /* Icon image filters & sizing */
@@ -121,13 +121,7 @@ body::before {
     height: 20px;
     object-fit: contain;
     filter: invert(1);
-}
-
-.app-icon-sm {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-    filter: invert(1);
+    pointer-events: none;
 }
 
 .app-icon-hero {
@@ -135,13 +129,35 @@ body::before {
     height: 32px;
     object-fit: contain;
     filter: invert(1);
+    pointer-events: none;
 }
 
-.app-icon-btn {
+/* Quasar button icon image filter overrides */
+.q-btn .q-icon img,
+.nav-tab-btn .q-icon img,
+.btn-primary .q-icon img,
+.btn-secondary .q-icon img {
+    filter: invert(1);
     width: 20px;
     height: 20px;
     object-fit: contain;
-    filter: invert(1);
+    vertical-align: middle;
+    pointer-events: none;
+}
+
+.nav-tab-btn .q-icon {
+    font-size: 20px !important;
+    margin-right: 6px !important;
+}
+
+/* Prevent any child element from blocking button clicks */
+.q-btn *, .nav-tab-btn *, .btn-primary *, .btn-secondary * {
+    pointer-events: none !important;
+}
+
+.q-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
 }
 
 .hero-banner {
@@ -189,6 +205,7 @@ body::before {
     font-weight: 400;
 }
 
+/* Glass Card with uniform styling across views */
 .glass-card {
     background: var(--bg-surface) !important;
     backdrop-filter: blur(20px) saturate(1.4) !important;
@@ -197,8 +214,12 @@ body::before {
     border-radius: var(--radius-lg) !important;
     box-shadow: var(--shadow-card) !important;
     padding: clamp(16px, 3vw, 24px) !important;
-    transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1), border-color 260ms ease, box-shadow 260ms ease;
+    transition: border-color 260ms ease, box-shadow 260ms ease;
     box-sizing: border-box;
+    min-height: 460px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .glass-card:hover {
@@ -231,8 +252,8 @@ body::before {
 }
 
 .tab-inactive:hover {
-    color: var(--text-1) !important;
-    background: rgba(255, 255, 255, 0.05) !important;
+    color: #FFFFFF !important;
+    background: rgba(255, 255, 255, 0.06) !important;
 }
 
 .tab-active {
@@ -265,22 +286,23 @@ body::before {
     box-shadow: 0 6px 20px rgba(93, 64, 55, 0.5) !important;
 }
 
+/* Secondary Button: subtle ghost button with low visual weight */
 .btn-secondary {
     background: transparent !important;
-    color: var(--text-1) !important;
+    color: var(--text-2) !important;
     font-family: var(--font-brand) !important;
     border: 1px solid var(--border-subtle) !important;
     border-radius: var(--radius-md) !important;
     font-weight: 500 !important;
-    font-size: 14px !important;
+    font-size: 13.5px !important;
     transition: all 200ms ease !important;
     height: 44px !important;
 }
 
 .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.08) !important;
+    color: #FFFFFF !important;
     border-color: var(--border-hover) !important;
-    transform: translateY(-1px);
 }
 
 .btn-secondary:active, .btn-secondary:focus {
@@ -328,7 +350,13 @@ body::before {
     color: var(--text-2);
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+}
+
+.field-helper {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
 }
 
 .input-error-msg {
@@ -340,6 +368,55 @@ body::before {
     gap: 4px;
 }
 
+/* Metadata Preview Card */
+.metadata-preview-card {
+    background: rgba(18, 18, 22, 0.75) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 10px 12px !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    animation: fadeIn 250ms ease-out;
+}
+
+.preview-thumb-box {
+    width: 80px;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #0E0E12;
+    flex-shrink: 0;
+}
+
+.preview-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-title {
+    font-family: var(--font-brand);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #FFFFFF;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.preview-meta {
+    font-size: 11.5px;
+    color: var(--text-2);
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+/* Skeleton Loading Shimmer */
 .skeleton-shimmer {
     background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.11) 50%, rgba(255,255,255,0.04) 75%);
     background-size: 200% 100%;
@@ -396,6 +473,29 @@ body::before {
     transition: width 300ms ease-out !important;
 }
 
+/* Modal Dialog and Scrim */
+.q-dialog__backdrop {
+    background: rgba(8, 8, 10, 0.88) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+}
+
+.preset-row {
+    background: rgba(24, 24, 30, 0.7);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 180ms ease;
+    width: 100%;
+}
+
+.preset-row:hover {
+    background: rgba(93, 64, 55, 0.3);
+    border-color: var(--brown-border);
+    transform: translateX(3px);
+}
+
 .q-menu {
     background: var(--bg-surface-elevated) !important;
     border: 1px solid var(--border-subtle) !important;
@@ -411,7 +511,7 @@ body::before {
 }
 
 .q-item:hover {
-    background: rgba(93, 64, 55, 0.25) !important;
+    background: rgba(93, 64, 55, 0.3) !important;
     color: #FFFFFF !important;
 }
 
@@ -425,7 +525,7 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.18);
     border-radius: var(--radius-full);
 }
 
@@ -451,6 +551,7 @@ body::before {
 @media (max-width: 640px) {
     .glass-card {
         padding: 16px !important;
+        min-height: auto;
     }
     .hero-app-title {
         font-size: 24px;

@@ -2,7 +2,7 @@
 Main NiceGUI web application bootstrap for TubeHarvester.
 
 Constructs application layout, injects global styles, orchestrates view transitions,
-and exposes the entry point runner.
+coordinates URL auto-detection mode switching, and exposes the entry point runner.
 """
 
 from pathlib import Path
@@ -35,13 +35,11 @@ def buildLayout() -> None:
             header = Header()
             header.render()
 
-            # Dynamic view instances
-            single_view = SingleView()
-            batch_view = BatchView()
-
             # Container placeholders for tab swapping
             single_container = ui.column().classes('w-full')
             batch_container = ui.column().classes('w-full hidden')
+
+            nav_tabs: NavTabs
 
             def switchView(selected_tab: str) -> None:
                 """
@@ -56,6 +54,25 @@ def buildLayout() -> None:
                 else:
                     single_container.classes(add='hidden')
                     batch_container.classes(remove='hidden')
+
+            def handleAutoModeSwitch(target_mode: str, url: str) -> None:
+                """
+                Coordinates cross-view mode switching when URL auto-detection triggers.
+
+                Args:
+                    target_mode (str): Destination mode ('single' or 'batch').
+                    url (str): Detected YouTube URL.
+                """
+                nav_tabs.setActiveTab(target_mode)
+                switchView(target_mode)
+                if target_mode == 'single':
+                    single_view.setUrl(url)
+                else:
+                    batch_view.setUrl(url)
+
+            # Instantiates dynamic view controllers with auto-switch callbacks
+            single_view = SingleView(on_mode_switch=handleAutoModeSwitch)
+            batch_view = BatchView(on_mode_switch=handleAutoModeSwitch)
 
             # Render navigation tabs above the cards for seamless top-level mode switching
             nav_tabs = NavTabs(active_tab='single', on_change=switchView)
