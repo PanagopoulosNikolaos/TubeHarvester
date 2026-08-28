@@ -53,7 +53,6 @@ class PathSelector:
 
                 ui.button(
                     'Browse',
-                    icon='folder_open',
                     on_click=self.openBrowseDialog,
                 ).classes('btn-secondary px-4')
 
@@ -116,9 +115,7 @@ class PathSelector:
             with ui.column().classes('w-full gap-2 mb-4'):
                 for name, path in presets:
                     with ui.row().classes('w-full items-center justify-between p-2 rounded-lg bg-stone-900/60 hover:bg-stone-800/80 cursor-pointer transition'):
-                        with ui.row().classes('items-center gap-2'):
-                            ui.icon('folder', size='20px').classes('text-orange-400')
-                            ui.label(name).classes('text-sm font-medium text-stone-200')
+                        ui.label(name).classes('text-sm font-medium text-stone-200')
 
                         def selectPreset(p: str = path) -> None:
                             self.setValue(p)

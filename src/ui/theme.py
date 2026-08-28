@@ -115,6 +115,35 @@ body::before {
     gap: clamp(14px, 2vh, 22px);
 }
 
+/* Icon image filters & sizing */
+.app-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    filter: invert(1);
+}
+
+.app-icon-sm {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    filter: invert(1);
+}
+
+.app-icon-hero {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    filter: invert(1);
+}
+
+.app-icon-btn {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    filter: invert(1);
+}
+
 .hero-banner {
     display: flex;
     flex-direction: column;
@@ -185,70 +214,35 @@ body::before {
     padding: 3px !important;
 }
 
-.glass-tab {
-    background: transparent !important;
+.nav-tab-btn {
     border-radius: var(--radius-full) !important;
     font-family: var(--font-brand) !important;
     font-weight: 600 !important;
     font-size: clamp(12px, 1.8vw, 14px) !important;
-    color: var(--text-2) !important;
     transition: all 220ms ease !important;
-    min-height: 38px !important;
-    padding: 0 20px !important;
+    min-height: 40px !important;
+    padding: 0 16px !important;
+}
+
+.tab-inactive {
+    background: transparent !important;
+    color: var(--text-2) !important;
     border: 1px solid transparent !important;
 }
 
-.glass-tab:hover {
+.tab-inactive:hover {
     color: var(--text-1) !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-}
-
-.glass-tab.q-tab--active {
-    background: var(--brown-selected) !important;
-    color: #FFFFFF !important;
-    border: 1px solid var(--brown-border) !important;
-    box-shadow: 0 2px 10px rgba(93, 64, 55, 0.45) !important;
-}
-
-/* Quasar button toggle overrides: transparent by default, brown-8 when active */
-.q-btn-toggle {
-    background: transparent !important;
-    border: 1px solid var(--border-subtle) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 3px !important;
-    gap: 3px !important;
-}
-
-.q-btn-toggle .q-btn {
-    background: transparent !important;
-    color: var(--text-2) !important;
-    font-family: var(--font-brand) !important;
-    font-weight: 500 !important;
-    font-size: clamp(12px, 1.8vw, 13.5px) !important;
-    border-radius: calc(var(--radius-md) - 3px) !important;
-    border: none !important;
-    box-shadow: none !important;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
-    min-height: 38px !important;
-}
-
-.q-btn-toggle .q-btn:hover {
     background: rgba(255, 255, 255, 0.05) !important;
-    color: var(--text-1) !important;
 }
 
-.q-btn-toggle .q-btn.q-btn--active,
-.q-btn-toggle .q-btn.bg-brown-8,
-.q-btn-toggle .q-btn.bg-orange-8,
-.q-btn-toggle .q-btn.bg-primary {
+.tab-active {
     background: var(--brown-selected) !important;
     color: #FFFFFF !important;
-    font-weight: 600 !important;
     border: 1px solid var(--brown-border) !important;
     box-shadow: 0 2px 10px rgba(93, 64, 55, 0.45) !important;
 }
 
-/* Action button: transparent with accent border by default, brown-8 when hovered/pressed */
+/* Primary Action button: transparent resting, brown-8 active/hover */
 .btn-primary {
     background: transparent !important;
     color: #FFFFFF !important;

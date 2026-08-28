@@ -32,7 +32,6 @@ class LogConsole:
                 ui.label('Activity Log').classes('field-label mb-0')
                 ui.button(
                     'Clear Log',
-                    icon='cleaning_services',
                     on_click=self.clear,
                 ).props('flat dense size=sm').classes('text-xs text-stone-400 hover:text-stone-200')
 

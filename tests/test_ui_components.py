@@ -84,6 +84,16 @@ class TestNavTabs:
         assert tabs.active_tab == 'batch'
         callback.assert_called_with('batch')
 
+    def testSelectTab(self) -> None:
+        """
+        Tests selectTab method directly.
+        """
+        callback = Mock()
+        tabs = NavTabs(active_tab='single', on_change=callback)
+        tabs.selectTab('batch')
+        assert tabs.active_tab == 'batch'
+        callback.assert_called_with('batch')
+
 
 class TestUrlInput:
     """
@@ -201,6 +211,16 @@ class TestFormatPicker:
         picker = FormatPicker()
         picker.setResolutions(["2160p", "1440p", "1080p"])
         assert picker.resolutions == ["2160p", "1440p", "1080p"]
+
+    def testSetFormat(self) -> None:
+        """
+        Tests switching format between MP4 and MP3.
+        """
+        callback = Mock()
+        picker = FormatPicker(on_format_change=callback)
+        picker.setFormat("MP3")
+        assert picker.getFormat() == "MP3"
+        callback.assert_called_with("MP3")
 
 
 class TestProgressBar:

@@ -5,13 +5,22 @@ Constructs application layout, injects global styles, orchestrates view transiti
 and exposes the entry point runner.
 """
 
-from nicegui import ui
+from pathlib import Path
+from nicegui import app, ui
 
 from .components.header import Header
 from .components.nav_tabs import NavTabs
 from .theme import injectTheme
 from .views.batch_view import BatchView
 from .views.single_view import SingleView
+
+# Root static images directory path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+IMAGES_DIR = PROJECT_ROOT / "images"
+CRAWLER_ICON = IMAGES_DIR / "icons" / "crawler.png"
+
+# Registers static file route for icon and media assets
+app.add_static_files('/images', str(IMAGES_DIR))
 
 
 def buildLayout() -> None:
@@ -84,6 +93,7 @@ def createApp(
     """
     ui.run(
         title="TubeHarvester",
+        favicon=str(CRAWLER_ICON),
         dark=True,
         host=host,
         port=port,

@@ -1,49 +1,50 @@
 """
-Single download view module for TubeHarvester.
+Single download view controller for processing individual YouTube video and audio links.
 
-Manages standalone video/audio download workflows including resolution extraction,
-background thread processing, progress tracking, and notifications.
+Orchestrates URL validation, dynamic format discovery, progress monitoring, and background worker threads.
 """
 
 import asyncio
-from typing import List, Optional
+from typing import Optional
 from nicegui import ui
 
+from ...extraction.mp3_downloader import Mp3Downloader
+from ...extraction.mp4_downloader import Mp4Downloader
 from ..components.format_picker import FormatPicker
 from ..components.log_console import LogConsole
 from ..components.path_selector import PathSelector
 from ..components.progress import ProgressBar
 from ..components.url_input import UrlInput
-from ...extraction.mp3_downloader import Mp3Downloader
-from ...extraction.mp4_downloader import Mp4Downloader
 
 
 class SingleView:
     """
-    Coordinates UI and background processing for single video and audio downloads.
+    Manages the Single Download view UI lifecycle and download operations.
     """
 
     def __init__(self) -> None:
         """
-        Initializes the SingleView component state.
+        Initializes SingleView components and state variables.
         """
-        self.is_downloading = False
-        self.last_fetched_url = ""
-        self.active_downloader = None
-        self.download_task: Optional[asyncio.Task] = None
-
         self.url_input = UrlInput(
             placeholder="https://www.youtube.com/watch?v=...",
             label="YouTube Video URL",
             on_change_debounced=self.handleUrlDebounced,
         )
-        self.path_selector = PathSelector()
         self.format_picker = FormatPicker()
+        self.path_selector = PathSelector()
         self.progress_bar = ProgressBar()
         self.log_console = LogConsole()
 
-        self.action_button: Optional[ui.button] = None
+        self.last_fetched_url: str = ""
+        self.is_downloading: bool = False
+        self.download_task: Optional[asyncio.Task] = None
+        self.active_downloader: Optional[object] = None
+
         self.card_container: Optional[ui.card] = None
+        self.action_button: Optional[ui.button] = None
+        self.action_icon: Optional[ui.image] = None
+        self.action_label: Optional[ui.label] = None
 
     def render(self) -> None:
         """
@@ -61,10 +62,12 @@ class SingleView:
                 # Action button container
                 with ui.row().classes('w-full justify-end mt-2'):
                     self.action_button = ui.button(
-                        'Download Video',
-                        icon='download',
                         on_click=self.handleActionClicked,
                     ).classes('btn-primary w-full sm:w-auto')
+                    with self.action_button:
+                        with ui.row().classes('items-center justify-center gap-2 no-wrap'):
+                            self.action_icon = ui.image('/images/icons/YouTube-download.png').classes('app-icon-btn')
+                            self.action_label = ui.label('Download Media').classes('font-semibold')
 
                 # Progress indicator
                 self.progress_bar.render()
@@ -108,32 +111,33 @@ class SingleView:
             resolutions_set = set()
             for fmt in formats:
                 height = fmt.get('height')
-                # Collects distinct video resolutions.
                 if height and isinstance(height, int) and height >= 144:
                     resolutions_set.add(f"{height}p")
 
-            # Sorts resolutions descending by numerical height.
-            sorted_res = sorted(
-                list(resolutions_set),
-                key=lambda r: int(r.replace('p', '')),
-                reverse=True,
-            )
-
-            if sorted_res:
-                self.format_picker.setResolutions(sorted_res)
-                self.log_console.log(f"Available resolutions: {', '.join(sorted_res)}", level="info")
+            if resolutions_set:
+                # Sorts resolutions in descending order (e.g., 1080p, 720p, 480p).
+                sorted_resolutions = sorted(
+                    list(resolutions_set),
+                    key=lambda r: int(r.replace('p', '')) if r.replace('p', '').isdigit() else 0,
+                    reverse=True,
+                )
+                self.format_picker.setResolutions(sorted_resolutions)
+                self.log_console.log(
+                    f"Discovered resolutions: {', '.join(sorted_resolutions)}",
+                    level="info",
+                )
             else:
-                self.log_console.log("No specific resolutions detected, using default profiles.")
+                self.log_console.log("No distinct video resolutions found; using defaults.", level="warn")
 
         except Exception as exc:
-            self.log_console.log(f"Format fetch notice: {str(exc)}", level="error")
+            self.log_console.log(f"Failed to fetch resolutions: {str(exc)}", level="warn")
 
         finally:
             self.format_picker.setLoadingResolutions(False)
 
     def handleActionClicked(self) -> None:
         """
-        Handles primary button clicks to start or cancel single media downloads.
+        Dispatches primary action button clicks based on current processing state.
         """
         if self.is_downloading:
             self.cancelDownload()
@@ -142,7 +146,7 @@ class SingleView:
 
     def startDownload(self) -> None:
         """
-        Validates inputs and launches single download execution in a background thread.
+        Validates form inputs and launches asynchronous download execution.
         """
         if not self.url_input.validate(is_batch=False):
             return
@@ -155,16 +159,17 @@ class SingleView:
         media_format = self.format_picker.getFormat()
         quality = self.format_picker.getQuality()
 
-        self.setDownloadingState(True)
         self.progress_bar.reset()
-        self.progress_bar.setProgress(0, f"Starting {media_format} download...")
-        self.log_console.log(f"Initiating {media_format} download for: {url}")
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setProgress(0, "Starting download...")
+        self.setDownloadingState(True)
+        self.log_console.log(f"Starting {media_format} download for: {url}")
 
         self.download_task = asyncio.create_task(
-            self.runDownloadAsync(url, path, media_format, quality)
+            self.executeDownloadAsync(url, path, media_format, quality)
         )
 
-    async def runDownloadAsync(
+    async def executeDownloadAsync(
         self,
         url: str,
         path: str,
@@ -172,11 +177,11 @@ class SingleView:
         quality: str,
     ) -> None:
         """
-        Executes download and conversion logic in a background worker thread.
+        Runs the download worker in a background thread and streams progress.
 
         Args:
-            url (str): The video source URL.
-            path (str): The target destination folder.
+            url (str): Target video URL.
+            path (str): Save destination folder.
             media_format (str): Selected format ('MP4' or 'MP3').
             quality (str): Target quality setting.
         """
@@ -244,16 +249,16 @@ class SingleView:
             downloading (bool): True if downloading is in progress, False otherwise.
         """
         self.is_downloading = downloading
-        if self.action_button:
+        if self.action_button and self.action_label:
             if downloading:
-                self.action_button.text = "Cancel Download"
-                self.action_button.props(remove="icon=download")
-                self.action_button.props("icon=close")
+                self.action_label.text = "Cancel Download"
+                if self.action_icon:
+                    self.action_icon.classes(add='hidden')
                 self.action_button.classes(remove="btn-primary")
                 self.action_button.classes(add="btn-danger")
             else:
-                self.action_button.text = "Download Media"
-                self.action_button.props(remove="icon=close")
-                self.action_button.props("icon=download")
+                self.action_label.text = "Download Media"
+                if self.action_icon:
+                    self.action_icon.classes(remove='hidden')
                 self.action_button.classes(remove="btn-danger")
                 self.action_button.classes(add="btn-primary")

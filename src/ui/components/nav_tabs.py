@@ -1,7 +1,7 @@
 """
 Navigation tabs component for switching between Single and Batch download views.
 
-Provides glass-styled tab switcher with active tab glow and view transition triggers.
+Provides styled tab switcher with custom image icons and brown-8 selection state.
 """
 
 from typing import Callable, Optional
@@ -27,30 +27,66 @@ class NavTabs:
         """
         self.active_tab = active_tab
         self.on_change = on_change
-        self.tabs_element: Optional[ui.tabs] = None
+        self.single_btn: Optional[ui.button] = None
+        self.batch_btn: Optional[ui.button] = None
 
-    def render(self) -> ui.tabs:
+    def render(self) -> None:
         """
-        Renders the tab bar into the current UI context.
-
-        Returns:
-            ui.tabs: The instantiated NiceGUI tabs component.
+        Renders the tab bar into the current UI context with custom PNG icons.
         """
-        with ui.tabs(value=self.active_tab, on_change=self.handleTabChange).classes('glass-tabs w-full') as tabs:
-            ui.tab('single', label='Single Download').classes('glass-tab flex-1')
-            ui.tab('batch', label='Batch Download').classes('glass-tab flex-1')
+        with ui.element('div').classes('glass-tabs w-full flex flex-row items-center gap-2'):
+            self.single_btn = ui.button(
+                on_click=lambda: self.selectTab('single')
+            ).props('flat no-caps').classes('nav-tab-btn flex-1')
 
-        self.tabs_element = tabs
-        return tabs
+            with self.single_btn:
+                with ui.row().classes('items-center justify-center gap-2 no-wrap'):
+                    ui.image('/images/icons/YouTube-download.png').classes('app-icon-sm')
+                    ui.label('Single Download').classes('text-sm font-semibold')
+
+            self.batch_btn = ui.button(
+                on_click=lambda: self.selectTab('batch')
+            ).props('flat no-caps').classes('nav-tab-btn flex-1')
+
+            with self.batch_btn:
+                with ui.row().classes('items-center justify-center gap-2 no-wrap'):
+                    ui.image('/images/icons/playlist.png').classes('app-icon-sm')
+                    ui.label('Batch Download').classes('text-sm font-semibold')
+
+        self.updateTabStyles()
+
+    def selectTab(self, tab_id: str) -> None:
+        """
+        Selects the specified tab and triggers the on_change callback.
+
+        Args:
+            tab_id (str): Tab identifier ('single' or 'batch').
+        """
+        self.active_tab = tab_id
+        self.updateTabStyles()
+        if self.on_change:
+            self.on_change(self.active_tab)
 
     def handleTabChange(self, e: object) -> None:
         """
-        Handles tab selection change events from the NiceGUI component.
+        Compatibility handler for event objects.
 
         Args:
-            e (object): The event object containing the new tab value.
+            e (object): Event containing tab value.
         """
         new_val = getattr(e, 'value', str(e))
-        self.active_tab = str(new_val)
-        if self.on_change:
-            self.on_change(self.active_tab)
+        self.selectTab(str(new_val))
+
+    def updateTabStyles(self) -> None:
+        """
+        Updates button visual styles, applying brown-8 background to the selected tab.
+        """
+        if not self.single_btn or not self.batch_btn:
+            return
+
+        if self.active_tab == 'single':
+            self.single_btn.classes(remove='tab-inactive', add='tab-active')
+            self.batch_btn.classes(remove='tab-active', add='tab-inactive')
+        else:
+            self.batch_btn.classes(remove='tab-inactive', add='tab-active')
+            self.single_btn.classes(remove='tab-active', add='tab-inactive')

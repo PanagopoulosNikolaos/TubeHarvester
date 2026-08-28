@@ -1,7 +1,7 @@
 """
 Header component for the TubeHarvester application.
 
-Renders the top hero banner with logo container, application title, and descriptive tagline.
+Renders the top hero banner with crawler logo icon, application title, and descriptive tagline.
 """
 
 from nicegui import ui
@@ -25,8 +25,8 @@ class Header:
         with ui.element('div').classes('hero-banner'):
             with ui.element('div').classes('hero-brand'):
                 with ui.element('div').classes('hero-logo-box'):
-                    # Renders download/cloud arrow icon.
-                    ui.icon('download', size='28px').classes('text-white')
+                    # Uses the crawler logo icon as the primary application face.
+                    ui.image('/images/icons/crawler.png').classes('app-icon-hero')
 
                 ui.label('TubeHarvester').classes('hero-app-title')
 

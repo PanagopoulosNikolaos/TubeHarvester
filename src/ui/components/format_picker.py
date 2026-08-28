@@ -1,8 +1,8 @@
 """
 Format and quality selector component for choosing between MP4 video and MP3 audio.
 
-Provides format radio buttons, dynamic resolution dropdown with skeleton loading states,
-and automatic disabling of resolution selection when MP3 format is active.
+Provides format toggle buttons with custom PNG icons, dynamic resolution dropdown
+with skeleton loading states, and automatic disabling of resolution selection when MP3 format is active.
 """
 
 from typing import Callable, List, Optional
@@ -40,25 +40,39 @@ class FormatPicker:
         self.on_format_change = on_format_change
         self.on_quality_change = on_quality_change
 
-        self.format_toggle: Optional[ui.toggle] = None
+        self.mp4_btn: Optional[ui.button] = None
+        self.mp3_btn: Optional[ui.button] = None
         self.quality_select: Optional[ui.select] = None
         self.skeleton_container: Optional[ui.element] = None
         self.select_container: Optional[ui.element] = None
 
     def render(self) -> None:
         """
-        Builds format radio buttons and quality dropdown elements.
+        Builds format buttons with custom PNG icons and quality dropdown elements.
         """
         with ui.row().classes('w-full items-start gap-4 flex-wrap sm:flex-nowrap'):
             # Format selection column
             with ui.column().classes('flex-1 min-w-[140px] gap-1'):
                 ui.label('Media Format').classes('field-label')
 
-                self.format_toggle = ui.toggle(
-                    options={'MP4': 'MP4 Video', 'MP3': 'MP3 Audio'},
-                    value=self.format_value,
-                    on_change=self.handleFormatChanged,
-                ).props('no-caps spread rounded unelevated toggle-color=brown-8 color=transparent text-color=grey-5').classes('w-full q-btn-toggle')
+                with ui.element('div').classes('glass-tabs w-full flex flex-row items-center gap-1'):
+                    self.mp4_btn = ui.button(
+                        on_click=lambda: self.setFormat('MP4')
+                    ).props('flat no-caps').classes('nav-tab-btn flex-1')
+                    with self.mp4_btn:
+                        with ui.row().classes('items-center justify-center gap-1.5 no-wrap'):
+                            ui.image('/images/icons/download-mp4.png').classes('app-icon-sm')
+                            ui.label('MP4 Video').classes('text-xs sm:text-sm font-semibold')
+
+                    self.mp3_btn = ui.button(
+                        on_click=lambda: self.setFormat('MP3')
+                    ).props('flat no-caps').classes('nav-tab-btn flex-1')
+                    with self.mp3_btn:
+                        with ui.row().classes('items-center justify-center gap-1.5 no-wrap'):
+                            ui.image('/images/icons/download-mp3.png').classes('app-icon-sm')
+                            ui.label('MP3 Audio').classes('text-xs sm:text-sm font-semibold')
+
+                self.updateFormatStyles()
 
             # Quality selection column
             with ui.column().classes('flex-1 min-w-[140px] gap-1'):
@@ -79,15 +93,15 @@ class FormatPicker:
                         self.quality_select.props('disable')
                         self.quality_select.value = 'N/A'
 
-    def handleFormatChanged(self, e: object) -> None:
+    def setFormat(self, new_format: str) -> None:
         """
-        Processes media format toggle updates and adjusts quality selector availability.
+        Sets the active media format and updates UI state.
 
         Args:
-            e (object): Toggle event containing the selected format string.
+            new_format (str): 'MP4' or 'MP3'.
         """
-        new_val = getattr(e, 'value', '') or 'MP4'
-        self.format_value = str(new_val)
+        self.format_value = new_format
+        self.updateFormatStyles()
 
         if self.quality_select:
             if self.format_value == 'MP3':
@@ -102,6 +116,30 @@ class FormatPicker:
 
         if self.on_format_change:
             self.on_format_change(self.format_value)
+
+    def handleFormatChanged(self, e: object) -> None:
+        """
+        Processes media format toggle updates and adjusts quality selector availability.
+
+        Args:
+            e (object): Toggle event containing the selected format string.
+        """
+        new_val = getattr(e, 'value', '') or 'MP4'
+        self.setFormat(str(new_val))
+
+    def updateFormatStyles(self) -> None:
+        """
+        Updates button visual styles, applying brown-8 background to the selected format button.
+        """
+        if not self.mp4_btn or not self.mp3_btn:
+            return
+
+        if self.format_value == 'MP4':
+            self.mp4_btn.classes(remove='tab-inactive', add='tab-active')
+            self.mp3_btn.classes(remove='tab-active', add='tab-inactive')
+        else:
+            self.mp3_btn.classes(remove='tab-inactive', add='tab-active')
+            self.mp4_btn.classes(remove='tab-active', add='tab-inactive')
 
     def handleQualityChanged(self, e: object) -> None:
         """

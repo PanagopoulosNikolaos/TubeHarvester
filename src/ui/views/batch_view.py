@@ -6,18 +6,17 @@ cancellation confirmation dialogs, and progress tracking.
 """
 
 import asyncio
-import os
 from typing import Any, Dict, List, Optional
 from nicegui import ui
 
+from ...extraction.batch_downloader import BatchDownloader
+from ...extraction.channel_scraper import ChannelScraper
+from ...extraction.playlist_scraper import PlaylistScraper
 from ..components.format_picker import FormatPicker
 from ..components.log_console import LogConsole
 from ..components.path_selector import PathSelector
 from ..components.progress import ProgressBar
 from ..components.url_input import UrlInput
-from ...extraction.batch_downloader import BatchDownloader
-from ...extraction.channel_scraper import ChannelScraper
-from ...extraction.playlist_scraper import PlaylistScraper
 
 
 class BatchView:
@@ -37,16 +36,19 @@ class BatchView:
 
         self.url_input = UrlInput(
             placeholder="https://www.youtube.com/playlist?list=...",
-            label="Playlist or Channel URL",
+            label="Playlist URL",
         )
         self.path_selector = PathSelector()
         self.format_picker = FormatPicker()
         self.progress_bar = ProgressBar()
         self.log_console = LogConsole()
 
-        self.mode_toggle: Optional[ui.toggle] = None
+        self.playlist_btn: Optional[ui.button] = None
+        self.channel_btn: Optional[ui.button] = None
         self.max_videos_input: Optional[ui.input] = None
         self.action_button: Optional[ui.button] = None
+        self.action_icon: Optional[ui.image] = None
+        self.action_label: Optional[ui.label] = None
 
     def render(self) -> None:
         """
@@ -54,14 +56,28 @@ class BatchView:
         """
         with ui.card().classes('glass-card w-full'):
             with ui.column().classes('w-full gap-4'):
-                # Mode selector
+                # Mode selector with custom icons
                 with ui.column().classes('w-full gap-1'):
                     ui.label('Batch Mode').classes('field-label')
-                    self.mode_toggle = ui.toggle(
-                        options={'playlist': 'Playlist Download', 'channel': 'Channel / Profile Scrape'},
-                        value=self.mode_value,
-                        on_change=self.handleModeChanged,
-                    ).props('no-caps spread rounded unelevated toggle-color=brown-8 color=transparent text-color=grey-5').classes('w-full q-btn-toggle')
+
+                    with ui.element('div').classes('glass-tabs w-full flex flex-row items-center gap-1'):
+                        self.playlist_btn = ui.button(
+                            on_click=lambda: self.setMode('playlist')
+                        ).props('flat no-caps').classes('nav-tab-btn flex-1')
+                        with self.playlist_btn:
+                            with ui.row().classes('items-center justify-center gap-1.5 no-wrap'):
+                                ui.image('/images/icons/playlist.png').classes('app-icon-sm')
+                                ui.label('Playlist Download').classes('text-xs sm:text-sm font-semibold')
+
+                        self.channel_btn = ui.button(
+                            on_click=lambda: self.setMode('channel')
+                        ).props('flat no-caps').classes('nav-tab-btn flex-1')
+                        with self.channel_btn:
+                            with ui.row().classes('items-center justify-center gap-1.5 no-wrap'):
+                                ui.image('/images/icons/channel.png').classes('app-icon-sm')
+                                ui.label('Channel / Profile Scrape').classes('text-xs sm:text-sm font-semibold')
+
+                    self.updateModeStyles()
 
                 # URL input
                 self.url_input.render()
@@ -81,13 +97,15 @@ class BatchView:
                     with ui.column().classes('flex-1 gap-1'):
                         self.path_selector.render()
 
-                # Action button container
+                # Action button container with circular download icon
                 with ui.row().classes('w-full justify-end mt-2'):
                     self.action_button = ui.button(
-                        'Start Batch Download',
-                        icon='queue_play_next',
                         on_click=self.handleActionClicked,
                     ).classes('btn-primary w-full sm:w-auto')
+                    with self.action_button:
+                        with ui.row().classes('items-center justify-center gap-2 no-wrap'):
+                            self.action_icon = ui.image('/images/icons/download-circular-button.png').classes('app-icon-btn')
+                            self.action_label = ui.label('Start Batch Download').classes('font-semibold')
 
                 # Progress indicator
                 self.progress_bar.render()
@@ -95,15 +113,15 @@ class BatchView:
                 # Real-time activity log
                 self.log_console.render()
 
-    def handleModeChanged(self, e: object) -> None:
+    def setMode(self, new_mode: str) -> None:
         """
         Updates batch mode setting and adjusts URL placeholder and max limits.
 
         Args:
-            e (object): Toggle event containing the selected mode key.
+            new_mode (str): 'playlist' or 'channel'.
         """
-        new_mode = getattr(e, 'value', '') or 'playlist'
-        self.mode_value = str(new_mode)
+        self.mode_value = new_mode
+        self.updateModeStyles()
 
         if self.mode_value == 'playlist':
             self.url_input.label = "Playlist URL"
@@ -115,6 +133,30 @@ class BatchView:
             self.max_videos_value = "ALL"
             if self.max_videos_input:
                 self.max_videos_input.value = "ALL"
+
+    def updateModeStyles(self) -> None:
+        """
+        Updates button visual styles, applying brown-8 background to the selected mode button.
+        """
+        if not self.playlist_btn or not self.channel_btn:
+            return
+
+        if self.mode_value == 'playlist':
+            self.playlist_btn.classes(remove='tab-inactive', add='tab-active')
+            self.channel_btn.classes(remove='tab-active', add='tab-inactive')
+        else:
+            self.channel_btn.classes(remove='tab-inactive', add='tab-active')
+            self.playlist_btn.classes(remove='tab-active', add='tab-inactive')
+
+    def handleModeChanged(self, e: object) -> None:
+        """
+        Compatibility handler for mode toggle events.
+
+        Args:
+            e (object): Toggle event containing the selected mode key.
+        """
+        new_mode = getattr(e, 'value', '') or 'playlist'
+        self.setMode(str(new_mode))
 
     def handleMaxVideosChanged(self, e: object) -> None:
         """
@@ -336,16 +378,16 @@ class BatchView:
             downloading (bool): True if batch operation is running, False otherwise.
         """
         self.is_downloading = downloading
-        if self.action_button:
+        if self.action_button and self.action_label:
             if downloading:
-                self.action_button.text = "Cancel Batch"
-                self.action_button.props(remove="icon=queue_play_next")
-                self.action_button.props("icon=close")
+                self.action_label.text = "Cancel Batch"
+                if self.action_icon:
+                    self.action_icon.classes(add='hidden')
                 self.action_button.classes(remove="btn-primary")
                 self.action_button.classes(add="btn-danger")
             else:
-                self.action_button.text = "Start Batch Download"
-                self.action_button.props(remove="icon=close")
-                self.action_button.props("icon=queue_play_next")
+                self.action_label.text = "Start Batch Download"
+                if self.action_icon:
+                    self.action_icon.classes(remove='hidden')
                 self.action_button.classes(remove="btn-danger")
                 self.action_button.classes(add="btn-primary")
