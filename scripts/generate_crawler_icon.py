@@ -3,9 +3,10 @@
 Generates the crawler.png icon.
 
 Creates a black line-art YouTube logo (rounded rectangle with "YouTube" text),
-tilts it down to the right, and composites it onto spiderweb.png so it hangs
-from the spider's mouth on a short silk thread. Paths are resolved relative to
-the project root so the script can run from any working directory.
+tilts it slightly, and composites it directly at the spider's mouth so it
+looks like the spider bit the logo and is dragging it upward. Paths are
+resolved relative to the project root so the script can run from any working
+directory.
 
 Usage:
     python scripts/generate_crawler_icon.py
@@ -13,17 +14,18 @@ Usage:
 
 from pathlib import Path
 
+import math
+
 from PIL import Image, ImageDraw, ImageFont
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SOURCE_IMAGE = PROJECT_ROOT / "images" / "icons" / "spiderweb.png"
+SOURCE_IMAGE = PROJECT_ROOT / "images" / "icons" / "spiderweb1.png"
 OUTPUT_IMAGE = PROJECT_ROOT / "images" / "icons" / "crawler.png"
 
-LOGO_WIDTH = 85            # Width of the pasted logo before rotation, in pixels.
-TILT_ANGLE = -20           # Clockwise rotation; negative angle tilts down-right like "\".
-LOGO_CENTER_X = 305        # Horizontal center of the hanging logo on the canvas.
-LOGO_TOP_Y = 448           # Vertical top of the pasted logo, just below the spider's legs.
-MOUTH_POINT = (295, 388)   # Bottom of the spider body where the thread anchors.
+LOGO_WIDTH = 120           # Width of the pasted logo before rotation, in pixels.
+TILT_ANGLE = -55           # Clockwise rotation; negative angle tilts down-right like "\".
+MOUTH_POINT = (297, 470)   # Center of the spider's mouth between the fangs.
+BOX_PADDING = 20           # Padding between logo and box borders, in pixels.
 
 
 def createYoutubeLogo(width: int) -> Image.Image:
@@ -40,11 +42,10 @@ def createYoutubeLogo(width: int) -> Image.Image:
     logo = Image.new("RGBA", (200, 140), (0, 0, 0, 0))
     draw = ImageDraw.Draw(logo)
 
-    draw.rounded_rectangle([2, 2, 197, 137], radius=30, outline="black", width=10)
 
     try:
         font = ImageFont.truetype(
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 42
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 31
         )
     except OSError:
         font = ImageFont.load_default()  # Fallback keeps the script portable.
@@ -69,30 +70,40 @@ def generateCrawlerIcon() -> None:
     """
     Composites the tilted YouTube logo onto the spiderweb icon.
 
-    Loads spiderweb.png, draws a silk thread from the spider's mouth, and
-    pastes the rotated logo below the legs so it appears to hang.
+    Loads spiderweb.png and pastes the rotated logo at the spider's mouth
+    so it appears to be bitten and dragged upward.
 
     Returns:
         None: The result is written to OUTPUT_IMAGE.
     """
     yt_logo = createYoutubeLogo(LOGO_WIDTH)
-    yt_rotated = yt_logo.rotate(TILT_ANGLE, expand=True, fillcolor=(0, 0, 0, 0))
+    logo_w, logo_h = yt_logo.size
+
+    box_w = logo_w + 2 * BOX_PADDING
+    box_h = logo_h + 2 * BOX_PADDING
+
+    box = Image.new("RGBA", (box_w, box_h), (0, 0, 0, 0))
+    box_draw = ImageDraw.Draw(box)
+    box_draw.rounded_rectangle([2, 2, box_w - 3, box_h - 3], radius=30, outline="black", width=5)
+
+    box.paste(yt_logo, (BOX_PADDING, BOX_PADDING), yt_logo)
+
+    box_rotated = box.rotate(TILT_ANGLE, expand=True, fillcolor=(0, 0, 0, 0))
 
     result = Image.open(SOURCE_IMAGE).convert("RGBA")
-    draw = ImageDraw.Draw(result)
 
-    logo_w, logo_h = yt_rotated.size
-    paste_x = LOGO_CENTER_X - logo_w // 2
-    paste_y = LOGO_TOP_Y
+    rot_w, rot_h = box_rotated.size
+    angle_rad = math.radians(TILT_ANGLE)
+    cx, cy = box_w / 2, box_h / 2
+    corner_x = -cx * math.cos(angle_rad) + cy * math.sin(angle_rad) + rot_w / 2
+    corner_y = -cx * math.sin(angle_rad) - cy * math.cos(angle_rad) + rot_h / 2
 
-    # Thread runs from the mouth to the top-left corner of the tilted logo.
-    thread_top = MOUTH_POINT
-    thread_bottom = (LOGO_CENTER_X - 12, paste_y + 14)
-    draw.line([thread_top, thread_bottom], fill="black", width=3)
+    paste_x = int(MOUTH_POINT[0] - corner_x)
+    paste_y = int(MOUTH_POINT[1] - corner_y)
 
-    result.paste(yt_rotated, (paste_x, paste_y), yt_rotated)
+    result.paste(box_rotated, (paste_x, paste_y), box_rotated)
     result.save(OUTPUT_IMAGE, "PNG")
-    print(f"Saved {OUTPUT_IMAGE} (logo {logo_w}x{logo_h} at {paste_x},{paste_y})")
+    print(f"Saved {OUTPUT_IMAGE} (rotated box {rot_w}x{rot_h} at {paste_x},{paste_y}, corner offset ({corner_x:.1f},{corner_y:.1f}))")
 
 
 if __name__ == "__main__":
