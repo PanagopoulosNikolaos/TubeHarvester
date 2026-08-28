@@ -62,54 +62,57 @@ class BatchView:
         Builds the batch download interface elements.
         """
         with ui.card().classes('glass-card w-full'):
-            with ui.column().classes('w-full gap-4'):
-                # Mode selector with custom icons
-                with ui.column().classes('w-full gap-1'):
-                    ui.label('Batch Mode').classes('field-label')
+            # Root card flex container distributing form fields and anchored bottom controls
+            with ui.column().classes('w-full h-full flex flex-col justify-between flex-1 gap-4'):
+                # Dynamically spaced form field container matching single view dimensions
+                with ui.column().classes('w-full flex-1 flex flex-col justify-between gap-3 sm:gap-4'):
+                    # Mode selector with custom icons
+                    with ui.column().classes('w-full gap-1'):
+                        ui.label('Batch Mode').classes('field-label')
 
-                    with ui.element('div').classes('glass-tabs w-full flex flex-row items-center gap-1'):
-                        self.playlist_btn = ui.button(
-                            'Playlist Download',
-                            icon='img:/images/icons/playlist.png',
-                            on_click=lambda: self.setMode('playlist'),
-                        ).props('flat no-caps').classes('nav-tab-btn flex-1')
+                        with ui.element('div').classes('glass-tabs w-full flex flex-row items-center gap-1'):
+                            self.playlist_btn = ui.button(
+                                'Playlist Download',
+                                icon='img:/images/icons/playlist.png',
+                                on_click=lambda: self.setMode('playlist'),
+                            ).props('flat no-caps').classes('nav-tab-btn flex-1')
 
-                        self.channel_btn = ui.button(
-                            'Channel / Profile Scrape',
-                            icon='img:/images/icons/channel.png',
-                            on_click=lambda: self.setMode('channel'),
-                        ).props('flat no-caps').classes('nav-tab-btn flex-1')
+                            self.channel_btn = ui.button(
+                                'Channel / Profile Scrape',
+                                icon='img:/images/icons/channel.png',
+                                on_click=lambda: self.setMode('channel'),
+                            ).props('flat no-caps').classes('nav-tab-btn flex-1')
 
-                    self.updateModeStyles()
+                        self.updateModeStyles()
 
-                # URL input
-                self.url_input.render()
+                    # URL input
+                    self.url_input.render()
 
-                # Format and Quality selector
-                self.format_picker.render()
+                    # Format and Quality selector
+                    self.format_picker.render()
 
-                # Options row: Max videos limit and destination path
-                with ui.row().classes('w-full items-start gap-4 flex-wrap sm:flex-nowrap'):
-                    with ui.column().classes('w-full sm:w-1/3 gap-1'):
-                        ui.label('Max Videos').classes('field-label')
-                        self.max_videos_input = ui.input(
-                            value=self.max_videos_value,
-                            on_change=self.handleMaxVideosChanged,
-                        ).props('outlined dense').classes('glass-input w-full')
-                        ui.label("Number of videos (e.g. 50) or 'ALL' for unlimited").classes('field-helper')
+                    # Options row: Max videos limit and destination path
+                    with ui.row().classes('w-full items-start gap-4 flex-wrap sm:flex-nowrap'):
+                        with ui.column().classes('w-full sm:w-1/3 gap-1'):
+                            ui.label('Max Videos').classes('field-label')
+                            self.max_videos_input = ui.input(
+                                value=self.max_videos_value,
+                                placeholder="200 or ALL",
+                                on_change=self.handleMaxVideosChanged,
+                            ).props('outlined dense').classes('glass-input w-full')
 
-                    with ui.column().classes('flex-1 gap-1'):
-                        self.path_selector.render()
+                        with ui.column().classes('flex-1 gap-1'):
+                            self.path_selector.render()
 
-                # Batch preview card
-                self.preview_card = ui.element('div').classes('metadata-preview-card w-full hidden')
-                with self.preview_card:
-                    with ui.column().classes('flex-1 gap-0'):
-                        self.preview_title = ui.label('Queue target: ...').classes('preview-title')
-                        with ui.element('div').classes('preview-meta'):
-                            self.preview_count = ui.label('').classes('text-xs text-orange-400')
+                    # Batch preview card
+                    self.preview_card = ui.element('div').classes('metadata-preview-card w-full hidden')
+                    with self.preview_card:
+                        with ui.column().classes('flex-1 gap-0'):
+                            self.preview_title = ui.label('Queue target: ...').classes('preview-title')
+                            with ui.element('div').classes('preview-meta'):
+                                self.preview_count = ui.label('').classes('text-xs text-orange-400')
 
-                # Action button container with circular download icon
+                # Action button container with circular download icon anchored at bottom
                 with ui.row().classes('w-full justify-end mt-2'):
                     self.action_button = ui.button(
                         'Start Batch Download',

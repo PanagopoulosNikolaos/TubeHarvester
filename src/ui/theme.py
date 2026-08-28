@@ -254,13 +254,13 @@ body::before {
     border: 1px solid var(--border-subtle) !important;
     border-radius: var(--radius-lg) !important;
     box-shadow: var(--shadow-card) !important;
-    padding: clamp(16px, 3vw, 24px) !important;
+    padding: clamp(18px, 3vw, 24px) !important;
     transition: border-color 260ms ease, box-shadow 260ms ease;
     box-sizing: border-box;
-    min-height: 460px;
+    min-height: 490px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: space-between;
 }
 
 .glass-card:hover {

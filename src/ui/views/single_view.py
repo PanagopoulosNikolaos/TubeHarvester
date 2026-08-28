@@ -61,25 +61,27 @@ class SingleView:
         with ui.card().classes('glass-card w-full') as card:
             self.card_container = card
 
-            # Form fields
-            with ui.column().classes('w-full gap-4'):
-                self.url_input.render()
-                self.format_picker.render()
-                self.path_selector.render()
+            # Root card flex container distributing form fields and anchored bottom controls
+            with ui.column().classes('w-full h-full flex flex-col justify-between flex-1 gap-4'):
+                # Dynamically spaced form field container matching batch view dimensions
+                with ui.column().classes('w-full flex-1 flex flex-col justify-between gap-4'):
+                    self.url_input.render()
+                    self.format_picker.render()
+                    self.path_selector.render()
 
-                # Pre-download metadata preview card
-                self.preview_card = ui.element('div').classes('metadata-preview-card w-full hidden')
-                with self.preview_card:
-                    with ui.element('div').classes('preview-thumb-box'):
-                        self.preview_thumb = ui.image('').classes('preview-thumb-img')
+                    # Pre-download metadata preview card
+                    self.preview_card = ui.element('div').classes('metadata-preview-card w-full hidden')
+                    with self.preview_card:
+                        with ui.element('div').classes('preview-thumb-box'):
+                            self.preview_thumb = ui.image('').classes('preview-thumb-img')
 
-                    with ui.column().classes('flex-1 gap-0'):
-                        self.preview_title = ui.label('Loading video...').classes('preview-title')
-                        with ui.element('div').classes('preview-meta'):
-                            self.preview_author = ui.label('').classes('text-xs text-stone-400')
-                            self.preview_duration = ui.label('').classes('text-xs text-orange-400')
+                        with ui.column().classes('flex-1 gap-0'):
+                            self.preview_title = ui.label('Loading video...').classes('preview-title')
+                            with ui.element('div').classes('preview-meta'):
+                                self.preview_author = ui.label('').classes('text-xs text-stone-400')
+                                self.preview_duration = ui.label('').classes('text-xs text-orange-400')
 
-                # Action button container
+                # Action button container anchored at bottom of card
                 with ui.row().classes('w-full justify-end mt-2'):
                     self.action_button = ui.button(
                         'Download Media',
