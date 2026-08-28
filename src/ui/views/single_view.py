@@ -53,11 +53,34 @@ class SingleView:
         self.preview_author: Optional[ui.label] = None
         self.preview_duration: Optional[ui.label] = None
         self.action_button: Optional[ui.button] = None
+        self.client: Optional[object] = None
+
+    def notifyUser(self, message: str, type: str = "info") -> None:
+        """
+        Sends a toast notification safely using the captured client context.
+
+        Args:
+            message (str): Toast notification text.
+            type (str): Notification type ('info', 'positive', 'warning', 'negative').
+        """
+        try:
+            if self.client:
+                with self.client:
+                    ui.notify(message, type=type, position="top-right")
+            else:
+                ui.notify(message, type=type, position="top-right")
+        except Exception:
+            pass
 
     def render(self) -> None:
         """
         Builds the single download interface elements with metadata preview.
         """
+        try:
+            self.client = ui.context.client
+        except Exception:
+            pass
+
         with ui.card().classes('glass-card w-full') as card:
             self.card_container = card
 
@@ -125,7 +148,7 @@ class SingleView:
         # Auto-detects playlist or channel URL and delegates to batch view if handler registered
         if link_type in ['playlist', 'channel'] and self.on_mode_switch:
             self.last_fetched_url = cleaned_url
-            ui.notify(f"Detected {link_type} link. Switching to Batch Download mode.", type="info", position="top-right")
+            self.notifyUser(f"Detected {link_type} link. Switching to Batch Download mode.", type="info")
             self.on_mode_switch('batch', cleaned_url)
             return
 
@@ -300,15 +323,15 @@ class SingleView:
 
             self.progress_bar.setProgress(100, "Download completed successfully")
             self.log_console.log("Download task finished successfully.", level="success")
-            ui.notify("Download completed successfully", type="positive", position="top-right")
+            self.notifyUser("Download completed successfully", type="positive")
 
         except asyncio.CancelledError:
             self.log_console.log("Download operation was cancelled by user.", level="error")
-            ui.notify("Download cancelled", type="warning", position="top-right")
+            self.notifyUser("Download cancelled", type="warning")
 
         except Exception as exc:
             self.log_console.log(f"Download failed: {str(exc)}", level="error")
-            ui.notify(f"Download failed: {str(exc)}", type="negative", position="top-right")
+            self.notifyUser(f"Download failed: {str(exc)}", type="negative")
 
         finally:
             self.setDownloadingState(False)

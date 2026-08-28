@@ -519,19 +519,34 @@ body::before {
 }
 
 .preset-row {
-    background: rgba(24, 24, 30, 0.7);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
-    cursor: pointer;
-    transition: all 180ms ease;
+    background: rgba(24, 24, 30, 0.75) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 12px 16px !important;
+    cursor: pointer !important;
+    transition: all 180ms ease !important;
     width: 100%;
+    user-select: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .preset-row:hover {
-    background: rgba(93, 64, 55, 0.3);
-    border-color: var(--brown-border);
-    transform: translateX(3px);
+    background: var(--brown-selected) !important;
+    border-color: var(--brown-border) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(93, 64, 55, 0.4);
+}
+
+.preset-row:active {
+    background: var(--brown-selected) !important;
+    transform: translateY(0);
+}
+
+.preset-row * {
+    pointer-events: none !important;
 }
 
 .q-menu {

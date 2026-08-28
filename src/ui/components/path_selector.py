@@ -33,6 +33,7 @@ class PathSelector:
         self.on_change = on_change
         self.error_message: Optional[str] = None
 
+        self.is_custom: bool = False
         self.input_element: Optional[ui.input] = None
         self.error_label: Optional[ui.label] = None
         self.browse_dialog: Optional[ui.dialog] = None
@@ -68,6 +69,7 @@ class PathSelector:
         """
         new_val = getattr(e, 'value', '') or ''
         self.value = str(new_val).strip()
+        self.is_custom = not self.isStandardPreset(self.value)
 
         if self.error_message:
             self.clearError()
@@ -96,9 +98,52 @@ class PathSelector:
         self.clearError()
         return True
 
+    def isStandardPreset(self, path_str: str) -> bool:
+        """
+        Checks whether the given path string corresponds to a standard preset directory.
+
+        Args:
+            path_str (str): Target directory path.
+
+        Returns:
+            bool: True if path matches a known standard preset, False otherwise.
+        """
+        home_dir = os.path.expanduser('~')
+        standard_paths = {
+            os.path.normpath(os.path.join(home_dir, "Downloads")),
+            os.path.normpath(os.path.join(home_dir, "Videos")),
+            os.path.normpath(os.path.join(home_dir, "Music")),
+            os.path.normpath(os.path.join(home_dir, "Desktop")),
+            os.path.normpath(os.path.join(home_dir, "Documents")),
+        }
+        return os.path.normpath(path_str.strip()) in standard_paths
+
+    def isCustom(self) -> bool:
+        """
+        Determines whether the currently selected path is a custom user directory.
+
+        Returns:
+            bool: True if custom path, False if standard preset.
+        """
+        if self.is_custom:
+            return True
+        return not self.isStandardPreset(self.value)
+
+    def selectPreset(self, path: str, dialog: ui.dialog) -> None:
+        """
+        Selects a standard destination preset and closes the modal.
+
+        Args:
+            path (str): Selected directory path.
+            dialog (ui.dialog): Parent directory picker modal.
+        """
+        self.is_custom = False
+        self.setValue(path)
+        dialog.close()
+
     def openBrowseDialog(self) -> None:
         """
-        Opens a directory picker modal dialog with full-width clickable presets and custom path entry.
+        Opens a directory picker modal dialog with full-width clickable preset buttons and custom path entry.
         """
         home_dir = os.path.expanduser('~')
         presets = [
@@ -113,20 +158,15 @@ class PathSelector:
             ui.label('Select Download Directory').classes('text-lg font-bold text-white mb-1')
             ui.label('Choose a standard destination folder or enter a custom path:').classes('text-xs text-stone-300 mb-3')
 
-            # Presets list with full-width click targets
+            # Presets list with fully clickable row buttons
             with ui.column().classes('w-full gap-2 mb-4'):
                 for name, path in presets:
-                    with ui.row().classes('preset-row items-center justify-between'):
+                    preset_row = ui.element('div').classes('preset-row')
+                    preset_row.on('click', lambda _, p=path: self.selectPreset(p, dialog))
+                    with preset_row:
                         with ui.column().classes('gap-0'):
                             ui.label(name).classes('text-sm font-semibold text-white')
                             ui.label(path).classes('text-xs text-stone-400')
-
-                        def selectPreset(p: str = path) -> None:
-                            self.setValue(p)
-                            dialog.close()
-
-                        # Click handler for entire row
-                        ui.button('Select', on_click=selectPreset).props('flat dense size=sm').classes('text-xs text-orange-400')
 
             # Custom path input section
             ui.label('Custom Directory Path:').classes('text-xs font-semibold text-stone-300 mb-1')
@@ -141,6 +181,7 @@ class PathSelector:
                 def applyCustom() -> None:
                     target_val = custom_input.value.strip()
                     if target_val:
+                        self.is_custom = True
                         self.setValue(target_val)
                     dialog.close()
 

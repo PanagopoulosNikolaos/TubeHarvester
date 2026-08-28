@@ -56,11 +56,34 @@ class BatchView:
         self.preview_title: Optional[ui.label] = None
         self.preview_count: Optional[ui.label] = None
         self.action_button: Optional[ui.button] = None
+        self.client: Optional[object] = None
+
+    def notifyUser(self, message: str, type: str = "info") -> None:
+        """
+        Sends a toast notification safely using the captured client context.
+
+        Args:
+            message (str): Toast notification text.
+            type (str): Notification type ('info', 'positive', 'warning', 'negative').
+        """
+        try:
+            if self.client:
+                with self.client:
+                    ui.notify(message, type=type, position="top-right")
+            else:
+                ui.notify(message, type=type, position="top-right")
+        except Exception:
+            pass
 
     def render(self) -> None:
         """
         Builds the batch download interface elements.
         """
+        try:
+            self.client = ui.context.client
+        except Exception:
+            pass
+
         with ui.card().classes('glass-card w-full'):
             # Root card flex container distributing form fields and anchored bottom controls
             with ui.column().classes('w-full h-full flex flex-col justify-between flex-1 gap-4'):
@@ -156,7 +179,7 @@ class BatchView:
         # Auto-detects single video URL and switches to Single view if handler registered
         if link_type == 'single' and self.on_mode_switch:
             self.last_fetched_url = cleaned_url
-            ui.notify("Detected single video link. Switching to Single Download mode.", type="info", position="top-right")
+            self.notifyUser("Detected single video link. Switching to Single Download mode.", type="info")
             self.on_mode_switch('single', cleaned_url)
             return
 
@@ -403,7 +426,7 @@ class BatchView:
 
             if not video_queue:
                 self.log_console.log("No videos found to download.", level="error")
-                ui.notify("No videos discovered at the specified URL.", type="warning", position="top-right")
+                self.notifyUser("No videos discovered at the specified URL.", type="warning")
                 self.setDownloadingState(False)
                 return
 
@@ -421,12 +444,17 @@ class BatchView:
             )
             self.active_batch_downloader = batch_downloader
 
+            is_custom = self.path_selector.isCustom()
+            if is_custom:
+                self.log_console.log(f"Custom path selected: files will be dumped directly into {base_path}", level="info")
+
             summary = await asyncio.to_thread(
                 batch_downloader.downloadBatch,
                 video_queue,
                 media_format,
                 base_path,
                 quality,
+                is_custom,
             )
 
             successful = summary.get('successful', 0)
@@ -435,18 +463,18 @@ class BatchView:
             if failed == 0:
                 self.progress_bar.setProgress(100, f"Batch complete: {successful}/{len(video_queue)} successful")
                 self.log_console.log(f"Batch completed: {successful} successful.", level="success")
-                ui.notify(f"Batch complete: {successful}/{len(video_queue)} downloaded", type="positive", position="top-right")
+                self.notifyUser(f"Batch complete: {successful}/{len(video_queue)} downloaded", type="positive")
             else:
                 self.log_console.log(f"Batch finished: {successful} successful, {failed} failed.", level="error")
-                ui.notify(f"Batch complete with {failed} failures.", type="warning", position="top-right")
+                self.notifyUser(f"Batch complete with {failed} failures.", type="warning")
 
         except asyncio.CancelledError:
             self.log_console.log("Batch process cancelled by user.", level="error")
-            ui.notify("Batch download cancelled", type="warning", position="top-right")
+            self.notifyUser("Batch download cancelled", type="warning")
 
         except Exception as exc:
             self.log_console.log(f"Batch processing error: {str(exc)}", level="error")
-            ui.notify(f"Batch error: {str(exc)}", type="negative", position="top-right")
+            self.notifyUser(f"Batch error: {str(exc)}", type="negative")
 
         finally:
             self.setDownloadingState(False)

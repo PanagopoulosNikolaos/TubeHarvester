@@ -168,6 +168,9 @@ class TestUrlInput:
         url_input.value = "https://www.youtube.com/@ChannelName"
         assert url_input.validate(is_batch=True) is True
 
+        url_input.value = "https://www.youtube.com/watch?v=ZEn8OzO87Ck&list=RDZEn8OzO87Ck&start_radio=1"
+        assert url_input.validate(is_batch=True) is True
+
     def testValidationBatchFailure(self) -> None:
         """
         Tests failure when a non-batch URL is supplied to batch validation.
@@ -212,6 +215,23 @@ class TestPathSelector:
         selector.setValue("   ")
         assert selector.validate() is False
         assert "specify a download location" in selector.error_message
+
+    def testCustomDetection(self) -> None:
+        """
+        Tests standard preset recognition and custom directory classification.
+        """
+        import os
+        home_dir = os.path.expanduser('~')
+        downloads_dir = os.path.join(home_dir, "Downloads")
+        custom_dir = "/tmp/my_custom_downloads"
+
+        selector = PathSelector(default_path=downloads_dir)
+        assert selector.isCustom() is False
+        assert selector.isStandardPreset(downloads_dir) is True
+
+        selector.setValue(custom_dir)
+        assert selector.isCustom() is True
+        assert selector.isStandardPreset(custom_dir) is False
 
 
 class TestFormatPicker:

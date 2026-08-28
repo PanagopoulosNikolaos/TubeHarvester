@@ -20,7 +20,7 @@ class LogConsole:
         """
         self.entries: List[dict] = []
         self.container: Optional[ui.element] = None
-        self.log_box: Optional[ui.column] = None
+        self.log_element: Optional[ui.log] = None
 
     def render(self) -> None:
         """
@@ -35,11 +35,11 @@ class LogConsole:
                     on_click=self.clear,
                 ).props('flat dense size=sm').classes('text-xs text-stone-400 hover:text-stone-200')
 
-            self.log_box = ui.column().classes('log-console w-full')
+            self.log_element = ui.log(max_lines=500).classes('log-console w-full')
 
     def log(self, message: str, level: str = "info") -> None:
         """
-        Appends a message entry to the log console with timestamp and color styling.
+        Appends a message entry to the log console with timestamp formatting.
 
         Args:
             message (str): Log message text.
@@ -52,34 +52,20 @@ class LogConsole:
         entry_data = {'time': timestamp, 'message': message, 'level': level}
         self.entries.append(entry_data)
 
-        # Unhides console on first incoming log message.
+        # Unhides console container on first incoming message
         if self.container:
             self.container.classes(remove='hidden')
 
-        if self.log_box:
-            with self.log_box:
-                color_class = "log-info"
-                if level == "success" or "complete" in message.lower() or "success" in message.lower():
-                    color_class = "log-success"
-                elif level == "error" or "error" in message.lower() or "failed" in message.lower():
-                    color_class = "log-error"
-
-                with ui.row().classes('log-entry w-full items-start gap-2'):
-                    ui.label(f"[{timestamp}]").classes('text-stone-500 font-mono text-xs select-none shrink-0')
-                    ui.label(message).classes(f'{color_class} text-xs font-mono flex-1')
-
-            # Auto-scrolls console to the bottom of message list.
-            ui.run_javascript(f"""
-                const el = document.querySelector('.log-console');
-                if (el) {{ el.scrollTop = el.scrollHeight; }}
-            """)
+        if self.log_element:
+            formatted_line = f"[{timestamp}] {message}"
+            self.log_element.push(formatted_line)
 
     def clear(self) -> None:
         """
         Clears all log entries and hides the console.
         """
         self.entries.clear()
-        if self.log_box:
-            self.log_box.clear()
+        if self.log_element:
+            self.log_element.clear()
         if self.container:
             self.container.classes(add='hidden')

@@ -53,6 +53,7 @@ class BatchDownloader:
         format_type: str,
         base_path: str,
         quality: str = "highest",
+        flat_dump: bool = False,
     ) -> Dict[str, Any]:
         """
         Downloads a list of videos concurrently using worker threads.
@@ -62,6 +63,7 @@ class BatchDownloader:
             format_type (str): Output format ('MP4' or 'MP3').
             base_path (str): Root destination directory.
             quality (str): Video quality setting (default: 'highest').
+            flat_dump (bool): If True, downloads files directly to base_path without subdirectories.
 
         Returns:
             Dict[str, Any]: Summary dictionary: {'successful': int, 'failed': int, 'errors': list}.
@@ -82,9 +84,10 @@ class BatchDownloader:
             return results
 
         if self.log_callback:
-            self.log_callback(f"Starting batch download of {self.total_videos} videos in {format_type} format")
+            dump_note = " (dumping directly to selected location)" if flat_dump else ""
+            self.log_callback(f"Starting batch download of {self.total_videos} videos in {format_type} format{dump_note}")
 
-        organized_paths = self.createFolderStructure(video_list, base_path, format_type)
+        organized_paths = self.createFolderStructure(video_list, base_path, format_type, flat_dump=flat_dump)
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_video: Dict[Any, Dict[str, Any]] = {}
@@ -224,6 +227,7 @@ class BatchDownloader:
         video_list: List[Dict[str, Any]],
         base_path: str,
         format_type: str,
+        flat_dump: bool = False,
     ) -> Dict[str, str]:
         """
         Creates subdirectories on disk organized by folder keys and format.
@@ -232,11 +236,19 @@ class BatchDownloader:
             video_list (List[Dict[str, Any]]): List of video metadata items.
             base_path (str): Root destination directory.
             format_type (str): Selected format ('MP4' or 'MP3').
+            flat_dump (bool): If True, maps all folders directly to base_path without subfolders.
 
         Returns:
             Dict[str, str]: Mapping from folder identifiers to absolute directory paths.
         """
         organized_paths: Dict[str, str] = {}
+
+        if flat_dump:
+            # Ensures base custom directory exists and routes all files directly to it
+            os.makedirs(base_path, exist_ok=True)
+            for video in video_list:
+                organized_paths[video.get('folder', '')] = base_path
+            return organized_paths
 
         if format_type.upper() == 'MP3':
             root_folder = os.path.join(base_path, "Music")

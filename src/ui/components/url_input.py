@@ -39,7 +39,7 @@ class UrlInput:
 
         self.input_element: Optional[ui.input] = None
         self.error_label: Optional[ui.label] = None
-        self.debounce_task: Optional[asyncio.Task] = None
+        self.debounce_timer: Optional[ui.timer] = None
 
     def render(self) -> None:
         """
@@ -97,24 +97,16 @@ class UrlInput:
             self.clearError()
 
         if self.on_change_debounced:
-            if self.debounce_task and not self.debounce_task.done():
-                self.debounce_task.cancel()
+            if self.debounce_timer:
+                self.debounce_timer.cancel()
 
-            self.debounce_task = asyncio.create_task(self.triggerDebouncedChange(self.value))
+            current_text = self.value
 
-    async def triggerDebouncedChange(self, text_val: str) -> None:
-        """
-        Waits for debounce delay before notifying subscribers.
+            def onTimeout() -> None:
+                if self.on_change_debounced:
+                    self.on_change_debounced(current_text)
 
-        Args:
-            text_val (str): The current text value.
-        """
-        try:
-            await asyncio.sleep(self.debounce_delay)
-            if self.on_change_debounced:
-                self.on_change_debounced(text_val)
-        except asyncio.CancelledError:
-            pass
+            self.debounce_timer = ui.timer(self.debounce_delay, onTimeout, once=True)
 
     def handleBlur(self) -> None:
         """
@@ -170,7 +162,7 @@ class UrlInput:
             return False
 
         if is_batch:
-            valid_batch_tokens = ["playlist", "/channel/", "/user/", "/c/", "/@"]
+            valid_batch_tokens = ["playlist", "list=", "/channel/", "/user/", "/c/", "/@"]
             if not any(token in raw for token in valid_batch_tokens):
                 self.setError("Please enter a valid playlist or channel URL.")
                 return False

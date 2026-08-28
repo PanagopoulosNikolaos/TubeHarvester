@@ -245,6 +245,27 @@ class TestBatchDownloader:
         assert os.path.exists(expected_videos_path)
         assert os.path.exists(expected_playlist_path)
 
+    def testCreateFolderStructureFlatDump(self) -> None:
+        """
+        Tests flat dump behavior mapping all files directly to base path without subdirectories.
+        """
+        video_list = [
+            {'url': 'https://youtube.com/watch?v=1', 'title': 'Video 1', 'folder': 'Playlists/Favorites'},
+            {'url': 'https://youtube.com/watch?v=2', 'title': 'Video 2', 'folder': 'Channel/Uploads'},
+        ]
+
+        organized_paths = self.downloader.createFolderStructure(
+            video_list,
+            self.test_base_path,
+            'MP4',
+            flat_dump=True,
+        )
+
+        assert organized_paths['Playlists/Favorites'] == self.test_base_path
+        assert organized_paths['Channel/Uploads'] == self.test_base_path
+        assert not os.path.exists(os.path.join(self.test_base_path, 'Videos'))
+        assert not os.path.exists(os.path.join(self.test_base_path, 'Playlists'))
+
     @patch('src.extraction.batch_downloader.Mp4Downloader')
     def testDownloadSingleVideoMp4(self, mock_mp4_downloader_class: Mock) -> None:
         """
