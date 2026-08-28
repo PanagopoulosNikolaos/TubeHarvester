@@ -85,7 +85,7 @@ class SingleView:
                         'Download Media',
                         icon='img:/images/icons/YouTube-download.png',
                         on_click=self.handleActionClicked,
-                    ).classes('btn-primary w-full sm:w-auto')
+                    ).props('flat no-caps').classes('btn-primary w-full sm:w-auto')
 
                 # Progress indicator
                 self.progress_bar.render()

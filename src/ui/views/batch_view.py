@@ -115,7 +115,7 @@ class BatchView:
                         'Start Batch Download',
                         icon='img:/images/icons/download-circular-button.png',
                         on_click=self.handleActionClicked,
-                    ).classes('btn-primary w-full sm:w-auto')
+                    ).props('flat no-caps').classes('btn-primary w-full sm:w-auto')
 
                 # Progress indicator
                 self.progress_bar.render()

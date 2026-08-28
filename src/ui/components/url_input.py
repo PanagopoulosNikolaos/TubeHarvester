@@ -62,7 +62,7 @@ class UrlInput:
                 ui.button(
                     'Paste',
                     on_click=self.pasteFromClipboard,
-                ).classes('btn-secondary px-3')
+                ).props('flat no-caps').classes('btn-secondary px-3')
 
             self.error_label = ui.label('').classes('input-error-msg hidden')
 

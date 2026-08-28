@@ -55,7 +55,7 @@ class PathSelector:
                 ui.button(
                     'Browse',
                     on_click=self.openBrowseDialog,
-                ).classes('btn-secondary px-4')
+                ).props('flat no-caps').classes('btn-secondary px-4')
 
             self.error_label = ui.label('').classes('input-error-msg hidden')
 
@@ -136,7 +136,7 @@ class PathSelector:
             ).props('outlined dense').classes('glass-input w-full mb-4')
 
             with ui.row().classes('w-full justify-end gap-2'):
-                ui.button('Close', on_click=dialog.close).classes('btn-secondary px-4')
+                ui.button('Close', on_click=dialog.close).props('flat no-caps').classes('btn-secondary px-4')
 
                 def applyCustom() -> None:
                     target_val = custom_input.value.strip()
@@ -144,7 +144,7 @@ class PathSelector:
                         self.setValue(target_val)
                     dialog.close()
 
-                ui.button('Apply Path', on_click=applyCustom).classes('btn-primary px-4')
+                ui.button('Apply Path', on_click=applyCustom).props('flat no-caps').classes('btn-primary px-4')
 
         dialog.open()
 

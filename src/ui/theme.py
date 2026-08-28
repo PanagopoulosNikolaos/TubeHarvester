@@ -11,6 +11,12 @@ THEME_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
+    --q-primary: #5D4037 !important;
+    --q-secondary: #3E2723 !important;
+    --q-accent: #FF7A3D !important;
+    --q-dark: #121214 !important;
+    --q-dark-page: #121214 !important;
+    
     --bg-base: #121214;
     --bg-surface: rgba(28, 28, 32, 0.82);
     --bg-surface-elevated: rgba(36, 36, 42, 0.92);
@@ -26,6 +32,7 @@ THEME_CSS = """
     --accent-glow: rgba(255, 122, 61, 0.28);
     
     --brown-selected: #5D4037;
+    --brown-hover: #6D4C41;
     --brown-border: rgba(141, 110, 99, 0.65);
     
     --danger: #EF4444;
@@ -160,6 +167,40 @@ body::before {
     cursor: pointer !important;
 }
 
+/* Base button styling: transparent resting state, brown-8 on hover and active/click */
+.q-btn,
+.btn-secondary,
+.btn-primary,
+.nav-tab-btn {
+    background: transparent !important;
+    color: var(--text-1) !important;
+    border: 1px solid var(--border-subtle) !important;
+    box-shadow: none !important;
+    transition: all 180ms ease !important;
+}
+
+.q-btn:hover,
+.btn-secondary:hover,
+.btn-primary:hover,
+.nav-tab-btn:hover {
+    background: var(--brown-selected) !important;
+    color: #FFFFFF !important;
+    border-color: var(--brown-border) !important;
+    box-shadow: 0 4px 14px rgba(93, 64, 55, 0.4) !important;
+}
+
+.q-btn:active,
+.btn-secondary:active,
+.btn-primary:active,
+.nav-tab-btn:active,
+.q-btn--active,
+.tab-active {
+    background: var(--brown-selected) !important;
+    color: #FFFFFF !important;
+    border-color: var(--brown-border) !important;
+    box-shadow: 0 2px 10px rgba(93, 64, 55, 0.55) !important;
+}
+
 .hero-banner {
     display: flex;
     flex-direction: column;
@@ -240,7 +281,6 @@ body::before {
     font-family: var(--font-brand) !important;
     font-weight: 600 !important;
     font-size: clamp(12px, 1.8vw, 14px) !important;
-    transition: all 220ms ease !important;
     min-height: 40px !important;
     padding: 0 16px !important;
 }
@@ -252,8 +292,9 @@ body::before {
 }
 
 .tab-inactive:hover {
+    background: var(--brown-selected) !important;
     color: #FFFFFF !important;
-    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid var(--brown-border) !important;
 }
 
 .tab-active {
@@ -272,21 +313,25 @@ body::before {
     font-size: 15px !important;
     border-radius: var(--radius-md) !important;
     border: 1px solid rgba(255, 122, 61, 0.65) !important;
-    box-shadow: 0 0 14px rgba(255, 122, 61, 0.2) !important;
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 0 14px rgba(255, 122, 61, 0.15) !important;
     height: 46px !important;
     min-width: 140px;
     letter-spacing: 0.2px;
 }
 
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+.btn-primary:hover, .btn-primary:focus {
     background: var(--brown-selected) !important;
     border-color: var(--brown-border) !important;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(93, 64, 55, 0.5) !important;
 }
 
-/* Secondary Button: subtle ghost button with low visual weight */
+.btn-primary:active {
+    background: var(--brown-selected) !important;
+    transform: translateY(0);
+}
+
+/* Secondary Button: subtle ghost button */
 .btn-secondary {
     background: transparent !important;
     color: var(--text-2) !important;
@@ -295,17 +340,10 @@ body::before {
     border-radius: var(--radius-md) !important;
     font-weight: 500 !important;
     font-size: 13.5px !important;
-    transition: all 200ms ease !important;
     height: 44px !important;
 }
 
-.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: #FFFFFF !important;
-    border-color: var(--border-hover) !important;
-}
-
-.btn-secondary:active, .btn-secondary:focus {
+.btn-secondary:hover, .btn-secondary:focus {
     background: var(--brown-selected) !important;
     color: #FFFFFF !important;
     border-color: var(--brown-border) !important;
