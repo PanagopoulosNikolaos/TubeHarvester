@@ -26,6 +26,7 @@ class Mp4Downloader:
         self,
         progress_callback: Optional[Callable[[int], None]] = None,
         log_callback: Optional[Callable[[str], None]] = None,
+        sleep_interval: int = 1,
     ) -> None:
         """
         Initializes the Mp4Downloader with callback functions.
@@ -40,6 +41,7 @@ class Mp4Downloader:
         self.log_callback = log_callback
         self.video_title: Optional[str] = None
         self.resolution: Any = "1080"
+        self.sleep_interval = sleep_interval
         self.cookie_manager = CookieManager(log_callback=self.log_callback)
 
     @staticmethod
@@ -94,11 +96,13 @@ class Mp4Downloader:
             'extractor_args': {
                 'youtube': {
                     'skip': ['translated_subs'],
-                }
-            },
+                },
             'quiet': False,
             'no_warnings': False,
-        }
+            'sleep_interval': self.sleep_interval,
+            'max_sleep_interval': self.sleep_interval + 3,
+            'sleep_requests': self.sleep_interval,
+        }}
         if cookie_file:
             ydl_opts['cookiefile'] = cookie_file
 

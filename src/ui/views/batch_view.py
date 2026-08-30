@@ -34,7 +34,7 @@ class BatchView:
         self.on_mode_switch = on_mode_switch
         self.is_downloading = False
         self.mode_value = "playlist"
-        self.max_videos_value = "200"
+        self.max_videos_value = "100"
         self.active_batch_downloader: Optional[BatchDownloader] = None
         self.batch_task: Optional[asyncio.Task] = None
         self.last_fetched_url: str = ""
@@ -120,7 +120,7 @@ class BatchView:
                             ui.label('Max Videos').classes('field-label')
                             self.max_videos_input = ui.input(
                                 value=self.max_videos_value,
-                                placeholder="200 or ALL",
+                                placeholder="100 or ALL",
                                 on_change=self.handleMaxVideosChanged,
                             ).props('outlined dense').classes('glass-input w-full')
 
@@ -240,9 +240,9 @@ class BatchView:
 
         if self.mode_value == 'playlist':
             self.url_input.label = "Playlist URL"
-            self.max_videos_value = "200"
+            self.max_videos_value = "100"
             if self.max_videos_input:
-                self.max_videos_input.value = "200"
+                self.max_videos_input.value = "100"
         else:
             self.url_input.label = "Channel / User URL"
             self.max_videos_value = "ALL"
@@ -280,7 +280,7 @@ class BatchView:
         Args:
             e (object): Input event carrying the text value.
         """
-        val = getattr(e, 'value', '') or '200'
+        val = getattr(e, 'value', '') or '100'
         self.max_videos_value = str(val).strip()
 
     def handleActionClicked(self) -> None:
@@ -328,15 +328,14 @@ class BatchView:
         base_path = self.path_selector.getValue()
         media_format = self.format_picker.getFormat()
         quality = self.format_picker.getQuality()
-
-        max_count = 200
+        max_count = 100
         if self.max_videos_value.upper() == "ALL":
             max_count = 10000
         else:
             try:
                 max_count = int(self.max_videos_value)
             except ValueError:
-                max_count = 200
+                max_count = 100
 
         self.setDownloadingState(True)
         self.progress_bar.reset()
@@ -431,14 +430,14 @@ class BatchView:
                 return
 
             self.log_console.log(f"Queued {len(video_queue)} videos for download.", level="info")
-            self.progress_bar.setProgress(0, f"Downloading 0/{len(video_queue)} videos (0%)")
+            self.progress_bar.setProgress(0, f"Downloading 0/{len(video_queue)} videos")
 
             # Launches concurrent multi-threaded batch downloader.
             def batchProgress(pct: int) -> None:
-                self.progress_bar.setProgress(pct, f"Downloading queue ({pct}%)")
+                self.progress_bar.setProgress(pct, "Downloading queue")
 
             batch_downloader = BatchDownloader(
-                max_workers=3,
+                max_workers=1,
                 progress_callback=batchProgress,
                 log_callback=lambda msg: self.log_console.log(msg),
             )

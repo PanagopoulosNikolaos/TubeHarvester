@@ -36,7 +36,7 @@ class ProgressBar:
                 self.status_label = ui.label('Ready').classes('font-medium text-stone-300')
                 self.percentage_label = ui.label('0%').classes('font-mono font-semibold text-orange-400')
 
-            self.progress_element = ui.linear_progress(value=0.0).classes('w-full rounded-full')
+            self.progress_element = ui.linear_progress(value=0.0, show_value=False).classes('w-full rounded-full')
 
     def setProgress(self, percentage: int, status: Optional[str] = None) -> None:
         """

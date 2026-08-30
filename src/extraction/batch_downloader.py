@@ -71,6 +71,7 @@ class BatchDownloader:
         self.total_videos = len(video_list)
         self.completed_videos = 0
         self.cancel_event.clear()
+        self.sleep_interval = 2 if self.total_videos > 100 else 1
 
         results: Dict[str, Any] = {
             'successful': 0,
@@ -194,7 +195,7 @@ class BatchDownloader:
             sanitized_title = sanitizeFilename(video_info['title'])
 
             if format_type.upper() == 'MP4':
-                downloader = Mp4Downloader()
+                downloader = Mp4Downloader(sleep_interval=self.sleep_interval)
                 downloader.setUrl(video_info['url'])
                 downloader.setPath(folder_path)
 
@@ -209,7 +210,7 @@ class BatchDownloader:
                 downloader.downloadVideo(custom_title=sanitized_title)
 
             elif format_type.upper() == 'MP3':
-                downloader = Mp3Downloader()
+                downloader = Mp3Downloader(sleep_interval=self.sleep_interval)
                 downloader.setUrl(video_info['url'])
                 downloader.setPath(folder_path)
                 downloader.downloadAsMp3(custom_title=sanitized_title)
@@ -251,9 +252,15 @@ class BatchDownloader:
             return organized_paths
 
         if format_type.upper() == 'MP3':
-            root_folder = os.path.join(base_path, "Music")
+            if os.path.basename(os.path.normpath(base_path)).lower() == "music":
+                root_folder = base_path
+            else:
+                root_folder = os.path.join(base_path, "Music")
         else:
-            root_folder = os.path.join(base_path, "Videos")
+            if os.path.basename(os.path.normpath(base_path)).lower() == "videos":
+                root_folder = base_path
+            else:
+                root_folder = os.path.join(base_path, "Videos")
 
         folder_groups: Dict[str, List[Dict[str, Any]]] = {}
         for video in video_list:

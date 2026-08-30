@@ -30,6 +30,7 @@ class Mp3Downloader:
         save_path: Optional[str] = None,
         progress_callback: Optional[Callable[[int], None]] = None,
         log_callback: Optional[Callable[[str], None]] = None,
+        sleep_interval: int = 1,
     ) -> None:
         """
         Initializes the Mp3Downloader with URL, destination path, and callbacks.
@@ -44,6 +45,7 @@ class Mp3Downloader:
         self.save_path = save_path if save_path else self.getDefaultDownloadPath()
         self.progress_callback = progress_callback
         self.log_callback = log_callback
+        self.sleep_interval = sleep_interval
         self.cookie_manager = CookieManager(log_callback=self.log_callback)
 
     def setUrl(self, url: str) -> None:
@@ -103,6 +105,9 @@ class Mp3Downloader:
                 'quiet': False,
                 'no_warnings': False,
                 'compat_opts': ['no-live-chat'],
+                'sleep_interval': self.sleep_interval,
+                'max_sleep_interval': self.sleep_interval + 3,
+                'sleep_requests': self.sleep_interval,
             }
             if cookie_file:
                 common_opts['cookiefile'] = cookie_file
